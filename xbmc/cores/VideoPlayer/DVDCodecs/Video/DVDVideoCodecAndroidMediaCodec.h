@@ -15,6 +15,7 @@
 #include "threads/Thread.h"
 #include "utils/Geometry.h"
 
+#include "platform/android/activity/JNIXBMCVideoSurfaceRenderer.h"
 #include "platform/android/activity/JNIXBMCVideoView.h"
 
 #include <atomic>
@@ -158,6 +159,7 @@ protected:
   int m_state;
 
   std::shared_ptr<jni::CJNIXBMCVideoView> m_jnivideoview;
+  std::shared_ptr<jni::CJNIXBMCVideoSurfaceRenderer> m_surfaceRenderer;
   CJNISurface m_jnivideosurface;
   unsigned int m_textureId = 0;
   std::shared_ptr<CJNIMediaCodec> m_codec;
@@ -180,6 +182,7 @@ protected:
 
   int m_indexInputBuffer;
   bool m_render_surface;
+  bool m_render_hybrid;
   mpeg2_sequence* m_mpeg2_sequence = nullptr;
   int m_src_offset[4];
   int m_src_stride[4];

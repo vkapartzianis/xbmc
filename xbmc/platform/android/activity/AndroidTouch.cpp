@@ -61,8 +61,9 @@ bool CAndroidTouch::onTouchEvent(AInputEvent* event)
 
     case AMOTION_EVENT_ACTION_OUTSIDE:
     case AMOTION_EVENT_ACTION_CANCEL:
-    default:
       break;
+    default:
+      return true;
   }
 
   float x = AMotionEvent_getX(event, touchPointer);

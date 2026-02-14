@@ -152,6 +152,15 @@
           </updates>
           <control type="toggle" />
         </setting>
+        <setting id="videoplayer.usemediacodechybridsurface" type="boolean" label="13470" help="36544">
+          <requirement>HAS_MEDIACODEC</requirement>
+          <level>2</level>
+          <default>false</default>
+          <updates>
+            <update type="change" />
+          </updates>
+          <control type="toggle" />
+        </setting>
         <setting id="videoplayer.usemediacodec" type="boolean" label="13439" help="36544">
           <requirement>HAS_MEDIACODEC</requirement>
           <level>2</level>

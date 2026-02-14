@@ -63,10 +63,16 @@ static float currentRefreshRate()
   return 60.0;
 }
 
+#include "utils/SystemInfo.h"
+
 static void fetchDisplayModes()
 {
   s_hasModeApi = false;
   s_res_displayModes.clear();
+
+  CLog::Log(LOGINFO, "CAndroidUtils::fetchDisplayModes Model name: {}", g_sysinfo.GetModelName());
+  //if (g_sysinfo.GetModelName().substr(0, 12) == "Oculus Quest")
+    return;
 
   CJNIDisplay display = CXBMCApp::getWindow().getDecorView().getDisplay();
 
@@ -262,7 +268,7 @@ bool CAndroidUtils::SetNativeResolution(const RESOLUTION_INFO& res)
     s_res_cur_displayMode = res;
   }
   else
-    CXBMCApp::Get().SetRefreshRate(res.fRefreshRate);
+    // CXBMCApp::Get().SetRefreshRate(res.fRefreshRate);
 
   CXBMCApp::Get().SetBuffersGeometry(res.iWidth, res.iHeight, 0);
 
@@ -273,6 +279,13 @@ bool CAndroidUtils::ProbeResolutions(std::vector<RESOLUTION_INFO>& resolutions)
 {
   RESOLUTION_INFO cur_res;
   bool ret = GetNativeResolution(&cur_res);
+
+  CLog::Log(LOGINFO, "CAndroidUtils::ProbeResolutions Model name: {}", g_sysinfo.GetModelName());
+  //if (g_sysinfo.GetModelName().substr(0, 12) == "Oculus Quest")
+  {
+    resolutions.push_back(cur_res);
+    return true;
+  }
 
   CLog::Log(LOGDEBUG, "CAndroidUtils: ProbeResolutions: {}x{}", m_width, m_height);
 

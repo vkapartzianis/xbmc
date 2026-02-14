@@ -7427,6 +7427,11 @@ msgid "Allow hardware acceleration - MediaCodec (Surface)"
 msgstr ""
 
 #: system/settings/settings.xml
+msgctxt "#13470"
+msgid "Allow hardware acceleration - MediaCodec (Hybrid Surface)"
+msgstr ""
+
+#: system/settings/settings.xml
 msgctxt "#13441"
 msgid "Use MPEG-2 VDPAU"
 msgstr ""

@@ -371,6 +371,9 @@ bool CDVDVideoCodecAndroidMediaCodec::Open(CDVDStreamInfo &hints, CDVDCodecOptio
       hints.profile, hints.ptsinvalid, hints.codec_tag, hints.extradata.GetSize());
 
   m_render_surface = CServiceBroker::GetSettingsComponent()->GetSettings()->GetBool(CSettings::SETTING_VIDEOPLAYER_USEMEDIACODECSURFACE);
+  m_render_hybrid = !m_render_surface && CServiceBroker::GetSettingsComponent()->GetSettings()->GetBool(CSettings::SETTING_VIDEOPLAYER_USEMEDIACODECHYBRIDSURFACE);
+  if (m_render_hybrid)
+    m_render_surface = true;
   m_state = MEDIACODEC_STATE_UNINITIALIZED;
   m_codecControlFlags = 0;
   m_hints = hints;
@@ -990,6 +993,11 @@ void CDVDVideoCodecAndroidMediaCodec::Dispose()
   m_InstanceGuard.exchange(false);
   if (m_render_surface)
   {
+    if (m_surfaceRenderer)
+    {
+      m_surfaceRenderer->release();
+      m_surfaceRenderer.reset();
+    }
     m_jnivideoview->release();
     m_jnivideoview.reset();
   }
@@ -1570,6 +1578,7 @@ bool CDVDVideoCodecAndroidMediaCodec::ConfigureMediaCodec(void)
       memcpy(dts_ptr, hdr_static_data.data(), hdr_static_data.size());
       mediaformat.setByteBuffer(CJNIMediaFormat::KEY_HDR_STATIC_INFO, bytebuffer);
     }
+
   }
 
   // handle codec extradata
@@ -1577,15 +1586,54 @@ bool CDVDVideoCodecAndroidMediaCodec::ConfigureMediaCodec(void)
 
   if (m_render_surface)
   {
-    m_jnivideosurface = m_jnivideoview->getSurface();
-    if (!m_jnivideosurface)
+    CJNISurface outputSurface = m_jnivideoview->getSurface();
+    if (!outputSurface)
     {
       CLog::Log(LOGERROR, "CDVDVideoCodecAndroidMediaCodec: VideoView getSurface failed!!");
       m_jnivideoview->release();
       m_jnivideoview.reset();
       return false;
     }
-    m_formatname += "(S)";
+
+    if (m_render_hybrid)
+    {
+      // Hybrid renderer: decode to SurfaceTexture, render via shader to Surface
+      m_surfaceRenderer =
+          std::make_shared<jni::CJNIXBMCVideoSurfaceRenderer>(outputSurface);
+      if (xbmc_jnienv()->ExceptionCheck())
+      {
+        xbmc_jnienv()->ExceptionDescribe();
+        xbmc_jnienv()->ExceptionClear();
+        CLog::Log(LOGERROR,
+                  "CDVDVideoCodecAndroidMediaCodec: SurfaceRenderer creation threw exception!!");
+        m_surfaceRenderer.reset();
+        m_jnivideoview->release();
+        m_jnivideoview.reset();
+        return false;
+      }
+      m_jnivideosurface = m_surfaceRenderer->getInputSurface();
+      if (!m_jnivideosurface)
+      {
+        CLog::Log(LOGERROR,
+                  "CDVDVideoCodecAndroidMediaCodec: SurfaceRenderer getInputSurface failed!!");
+        m_surfaceRenderer.reset();
+        m_jnivideoview->release();
+        m_jnivideoview.reset();
+        return false;
+      }
+
+      // SurfaceTexture's GL driver (Adreno) handles YUV-to-RGB with proper range
+      // expansion, so no additional correction needed in the shader
+      m_surfaceRenderer->setRangeCorrection(false);
+      CLog::Log(LOGINFO, "CDVDVideoCodecAndroidMediaCodec: Hybrid surface renderer active");
+      m_formatname += "(HS)";
+    }
+    else
+    {
+      // Direct surface mode: decode straight to VideoView surface
+      m_jnivideosurface = outputSurface;
+      m_formatname += "(S)";
+    }
   }
   else
       InitSurfaceTexture();

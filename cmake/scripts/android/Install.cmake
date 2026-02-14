@@ -46,6 +46,7 @@ set(package_files strings.xml
                   src/XBMCSearchableActivity.java
                   src/XBMCSettingsContentObserver.java
                   src/XBMCProperties.java
+                  src/XBMCVideoSurfaceRenderer.java
                   src/XBMCVideoView.java
                   src/XBMCFile.java
                   src/XBMCTextureCache.java
