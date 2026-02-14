@@ -34,6 +34,8 @@ public:
 
   static bool SupportsMediaCodecMimeType(const std::string& mimeType);
 
+  static bool IsQuestDevice();
+
   static std::vector<int> GetDisplaySupportedHdrTypes();
   static CHDRCapabilities GetDisplayHDRCapabilities();
   static std::pair<bool, bool> GetDolbyVisionCapabilities();

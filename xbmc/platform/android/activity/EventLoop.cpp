@@ -9,6 +9,7 @@
 #include "EventLoop.h"
 
 #include "XBMCApp.h"
+#include "windowing/android/AndroidUtils.h"
 
 #define IS_FROM_SOURCE(v, s) ((v & s) == s)
 
@@ -222,7 +223,7 @@ int32_t CEventLoop::processInput(AInputEvent* event)
   CXBMCApp::android_printf("processInput: type=%d, source=%d, deviceId=%d", type, source, deviceId);
 
   // handle Quest controller joystick input
-  if (source == AINPUT_SOURCE_CLASS_POINTER)
+  if (CAndroidUtils::IsQuestDevice() && source == AINPUT_SOURCE_CLASS_POINTER)
   {
     if (type == AINPUT_EVENT_TYPE_MOTION)
     {
@@ -255,7 +256,7 @@ int32_t CEventLoop::processInput(AInputEvent* event)
     }
   }
   // handle Quest controller pointer
-  if (source == AINPUT_SOURCE_TOUCHSCREEN)
+  if (CAndroidUtils::IsQuestDevice() && source == AINPUT_SOURCE_TOUCHSCREEN)
   {
     int32_t eventAction = AMotionEvent_getAction(event);
     int8_t pointerAction = eventAction & AMOTION_EVENT_ACTION_MASK;

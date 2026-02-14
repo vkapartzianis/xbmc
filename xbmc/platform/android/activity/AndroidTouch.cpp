@@ -12,6 +12,7 @@
 #include "input/touch/generic/GenericTouchInputHandler.h"
 
 #include "platform/android/activity/XBMCApp.h"
+#include "windowing/android/AndroidUtils.h"
 
 CAndroidTouch::CAndroidTouch()
 {
@@ -61,9 +62,10 @@ bool CAndroidTouch::onTouchEvent(AInputEvent* event)
 
     case AMOTION_EVENT_ACTION_OUTSIDE:
     case AMOTION_EVENT_ACTION_CANCEL:
-      break;
     default:
-      return true;
+      if (CAndroidUtils::IsQuestDevice())
+        return true;
+      break;
   }
 
   float x = AMotionEvent_getX(event, touchPointer);

@@ -18,6 +18,8 @@
 
 #include "platform/android/activity/XBMCApp.h"
 
+#include <sys/system_properties.h>
+
 #include <androidjni/MediaCodecInfo.h>
 #include <androidjni/MediaCodecList.h>
 #include <androidjni/System.h>
@@ -29,6 +31,19 @@
 static bool s_hasModeApi = false;
 static std::vector<RESOLUTION_INFO> s_res_displayModes;
 static RESOLUTION_INFO s_res_cur_displayMode;
+
+bool CAndroidUtils::IsQuestDevice()
+{
+  static int result = -1;
+  if (result < 0)
+  {
+    char value[PROP_VALUE_MAX] = {};
+    __system_property_get("ro.product.manufacturer", value);
+    result = (strcmp(value, "Oculus") == 0 || strcmp(value, "Meta") == 0) ? 1 : 0;
+    CLog::Log(LOGINFO, "CAndroidUtils::IsQuestDevice: manufacturer='{}', result={}", value, result);
+  }
+  return result == 1;
+}
 
 static float currentRefreshRate()
 {
@@ -63,15 +78,12 @@ static float currentRefreshRate()
   return 60.0;
 }
 
-#include "utils/SystemInfo.h"
-
 static void fetchDisplayModes()
 {
   s_hasModeApi = false;
   s_res_displayModes.clear();
 
-  CLog::Log(LOGINFO, "CAndroidUtils::fetchDisplayModes Model name: {}", g_sysinfo.GetModelName());
-  //if (g_sysinfo.GetModelName().substr(0, 12) == "Oculus Quest")
+  if (CAndroidUtils::IsQuestDevice())
     return;
 
   CJNIDisplay display = CXBMCApp::getWindow().getDecorView().getDisplay();
@@ -267,8 +279,8 @@ bool CAndroidUtils::SetNativeResolution(const RESOLUTION_INFO& res)
     CXBMCApp::Get().SetDisplayMode(std::atoi(res.strId.c_str()), res.fRefreshRate);
     s_res_cur_displayMode = res;
   }
-  else
-    // CXBMCApp::Get().SetRefreshRate(res.fRefreshRate);
+  else if (!CAndroidUtils::IsQuestDevice())
+    CXBMCApp::Get().SetRefreshRate(res.fRefreshRate);
 
   CXBMCApp::Get().SetBuffersGeometry(res.iWidth, res.iHeight, 0);
 
@@ -280,8 +292,7 @@ bool CAndroidUtils::ProbeResolutions(std::vector<RESOLUTION_INFO>& resolutions)
   RESOLUTION_INFO cur_res;
   bool ret = GetNativeResolution(&cur_res);
 
-  CLog::Log(LOGINFO, "CAndroidUtils::ProbeResolutions Model name: {}", g_sysinfo.GetModelName());
-  //if (g_sysinfo.GetModelName().substr(0, 12) == "Oculus Quest")
+  if (CAndroidUtils::IsQuestDevice())
   {
     resolutions.push_back(cur_res);
     return true;

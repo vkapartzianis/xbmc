@@ -12,6 +12,7 @@
 #include "XBMCApp.h"
 #include "application/AppInboundProtocol.h"
 #include "input/mouse/MouseStat.h"
+#include "windowing/android/AndroidUtils.h"
 #include "windowing/android/WinSystemAndroid.h"
 
 //#define DEBUG_VERBOSE
@@ -41,12 +42,14 @@ bool CAndroidMouse::onMouseEvent(AInputEvent* event)
     case AMOTION_EVENT_ACTION_SCROLL:
       MouseWheel(x, y, AMotionEvent_getAxisValue(event, AMOTION_EVENT_AXIS_VSCROLL, mousePointerIdx));
       return true;
-    case AMOTION_EVENT_ACTION_HOVER_MOVE:
-    case AMOTION_EVENT_ACTION_MOVE:
-      MouseMove(x,y);
-      return true;
     default:
-      CXBMCApp::android_printf("onMouseEvent: mouseAction=%d, x=%f, y=%f", mouseAction, (double)x, (double)y);
+      if (CAndroidUtils::IsQuestDevice())
+      {
+        if (mouseAction == AMOTION_EVENT_ACTION_HOVER_MOVE || mouseAction == AMOTION_EVENT_ACTION_MOVE)
+          MouseMove(x, y);
+        return true;
+      }
+      MouseMove(x,y);
       return true;
   }
   return false;

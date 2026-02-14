@@ -15,6 +15,10 @@
 #include "utils/GLUtils.h"
 #include "utils/log.h"
 
+#if defined(TARGET_ANDROID)
+#include "windowing/android/AndroidUtils.h"
+#endif
+
 #include <math.h>
 #include <string>
 
@@ -36,7 +40,12 @@ BaseVideoFilterShader::BaseVideoFilterShader()
 
   VertexShader()->LoadSource("gles_videofilter.vert");
 
-  PixelShader()->LoadSource("gles_videofilter.frag");
+#if defined(TARGET_ANDROID)
+  if (CAndroidUtils::IsQuestDevice())
+    PixelShader()->LoadSource("gles_videofilter_quest.frag");
+  else
+#endif
+    PixelShader()->LoadSource("gles_videofilter.frag");
 }
 
 void BaseVideoFilterShader::OnCompiledAndLinked()
