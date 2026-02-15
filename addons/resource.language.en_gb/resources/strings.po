@@ -7432,6 +7432,17 @@ msgid "Allow hardware acceleration - MediaCodec (Hybrid Surface)"
 msgstr ""
 
 #: system/settings/settings.xml
+msgctxt "#13490"
+msgid "Dolby Atmos decoding (MediaCodec)"
+msgstr ""
+
+#. Description of setting with label #13490 "Dolby Atmos decoding (MediaCodec)"
+#: system/settings/settings.xml
+msgctxt "#13491"
+msgid "Enable to decode Dolby Atmos / EAC3 using Android MediaCodec for spatial audio. Disable to use FFmpeg for standard 7.1 output."
+msgstr ""
+
+#: system/settings/settings.xml
 msgctxt "#13441"
 msgid "Use MPEG-2 VDPAU"
 msgstr ""

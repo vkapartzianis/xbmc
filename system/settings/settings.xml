@@ -3392,6 +3392,12 @@
           </dependencies>
           <control type="toggle" />
         </setting>
+        <setting id="audiooutput.dolbyatmosdecoding" type="boolean" label="13490" help="13491">
+          <requirement>HAS_MEDIACODEC</requirement>
+          <level>2</level>
+          <default>true</default>
+          <control type="toggle" />
+        </setting>
       </group>
     </category>
     <category id="input" label="14125" help="36374">

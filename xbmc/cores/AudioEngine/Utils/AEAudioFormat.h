@@ -48,6 +48,12 @@ struct AEAudioFormat
    */
   CAEStreamInfo m_streamInfo;
 
+  /**
+   * Whether this stream contains object-based audio (e.g. Dolby Atmos) that
+   * should bypass channel remapping and be passed through to the sink as-is
+   */
+  bool m_objectBased = false;
+
   AEAudioFormat()
   {
     m_dataFormat = AE_FMT_INVALID;
@@ -63,7 +69,8 @@ struct AEAudioFormat
             m_channelLayout ==  fmt.m_channelLayout &&
             m_frames        ==  fmt.m_frames        &&
             m_frameSize     ==  fmt.m_frameSize     &&
-            m_streamInfo    ==  fmt.m_streamInfo;
+            m_streamInfo    ==  fmt.m_streamInfo     &&
+            m_objectBased   ==  fmt.m_objectBased;
   }
 };
 

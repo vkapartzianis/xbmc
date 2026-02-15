@@ -51,7 +51,7 @@ protected:
   CAEChannelInfo GetChannelMap();
   int GetSampleRate() { return m_samplerate; }
   int GetEncodedSampleRate() { return m_samplerate; }
-  enum AEDataFormat GetDataFormat() { return AE_FMT_S16NE; }
+  enum AEDataFormat GetDataFormat() { return m_dataFormat; }
 
   bool ConfigureMediaCodec(void);
   void ConfigureOutputFormat(CJNIMediaFormat* mediaformat);
@@ -63,6 +63,8 @@ protected:
   bool m_opened = false, m_codecIsFed = false;
   int m_samplerate = 0;
   int m_channels = 0;
+  AEDataFormat m_dataFormat = AE_FMT_S16NE;
+  bool m_objectBasedAudio = false;
   uint8_t* m_buffer;
   int m_bufferSize = 0;
   int m_bufferUsed = 0;

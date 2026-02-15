@@ -21,6 +21,8 @@
 #include "DVDCodecs/DVDFactoryCodec.h"
 #include "ServiceBroker.h"
 #include "cores/AudioEngine/Interfaces/AE.h"
+#include "settings/Settings.h"
+#include "settings/SettingsComponent.h"
 #include "cores/AudioEngine/Utils/AEUtil.h"
 #include "cores/VideoPlayer/Interface/DemuxCrypto.h"
 #include "utils/StringUtils.h"
@@ -29,6 +31,7 @@
 #include <cassert>
 #include <stdexcept>
 
+#include <androidjni/AudioFormat.h>
 #include <androidjni/ByteBuffer.h>
 #include <androidjni/MediaCodec.h>
 #include <androidjni/MediaCodecCryptoInfo.h>
@@ -59,6 +62,7 @@ static bool IsDownmixDecoder(const std::string &name)
 static bool IsDecoderWhitelisted(const std::string &name)
 {
   static const char *whitelistDecoders[] = {
+    "c2.dolby.eac3.decoder",
     // End of list
     NULL
   };
@@ -175,7 +179,13 @@ bool CDVDAudioCodecAndroidMediaCodec::Open(CDVDStreamInfo &hints, CDVDCodecOptio
       break;
 
     case AV_CODEC_ID_EAC3:
-      m_mime = "audio/eac3";
+      if (!CServiceBroker::GetSettingsComponent()->GetSettings()->GetBool(
+              CSettings::SETTING_AUDIOOUTPUT_DOLBYATMOSDECODING))
+      {
+        CLog::Log(LOGDEBUG, "CDVDAudioCodecAndroidMediaCodec: Dolby Atmos decoding disabled in settings");
+        return false;
+      }
+      m_mime = "audio/eac3-joc";
       m_formatname = "amc-eac3";
       break;
 
@@ -217,6 +227,43 @@ bool CDVDAudioCodecAndroidMediaCodec::Open(CDVDStreamInfo &hints, CDVDCodecOptio
           continue;
         }
         CLog::Log(LOGINFO, "CDVDAudioCodecAndroidMediaCodec: Selected audio decoder: {}",
+                  codecName);
+        break;
+      }
+    }
+  }
+
+  // If JOC MIME didn't find a decoder, fall back to standard EAC3
+  if (!m_codec && m_mime == "audio/eac3-joc")
+  {
+    CLog::Log(LOGINFO, "CDVDAudioCodecAndroidMediaCodec: No decoder for audio/eac3-joc, trying audio/eac3");
+    m_mime = "audio/eac3";
+
+    const std::vector<CJNIMediaCodecInfo> codecInfos =
+        CJNIMediaCodecList(CJNIMediaCodecList::REGULAR_CODECS).getCodecInfos();
+
+    for (const CJNIMediaCodecInfo& codec_info : codecInfos)
+    {
+      if (codec_info.isEncoder())
+        continue;
+
+      std::string codecName = codec_info.getName();
+      if (!IsDecoderWhitelisted(codecName))
+        continue;
+
+      std::vector<std::string> mimeTypes = codec_info.getSupportedTypes();
+      if (std::find(mimeTypes.begin(), mimeTypes.end(), m_mime) != mimeTypes.end())
+      {
+        m_codec = std::shared_ptr<CJNIMediaCodec>(
+            new CJNIMediaCodec(CJNIMediaCodec::createByCodecName(codecName)));
+        if (xbmc_jnienv()->ExceptionCheck())
+        {
+          xbmc_jnienv()->ExceptionDescribe();
+          xbmc_jnienv()->ExceptionClear();
+          m_codec = NULL;
+          continue;
+        }
+        CLog::Log(LOGINFO, "CDVDAudioCodecAndroidMediaCodec: Selected audio decoder (fallback): {}",
                   codecName);
         break;
       }
@@ -496,7 +543,17 @@ bool CDVDAudioCodecAndroidMediaCodec::AddData(const DemuxPacket &packet)
     m_format.m_dataFormat = GetDataFormat();
     m_format.m_channelLayout = GetChannelMap();
     m_format.m_sampleRate = GetSampleRate();
-    m_format.m_frameSize = m_format.m_channelLayout.Count() * CAEUtil::DataFormatToBits(m_format.m_dataFormat) >> 3;
+    m_format.m_objectBased = m_objectBasedAudio;
+    if (m_objectBasedAudio)
+    {
+      // For object-based audio, frame size must account for all channels,
+      // not just the ones in the (capped) channel layout
+      m_format.m_frameSize = m_channels * (CAEUtil::DataFormatToBits(m_format.m_dataFormat) >> 3);
+    }
+    else
+    {
+      m_format.m_frameSize = m_format.m_channelLayout.Count() * CAEUtil::DataFormatToBits(m_format.m_dataFormat) >> 3;
+    }
   }
   return true;
 }
@@ -537,8 +594,18 @@ CAEChannelInfo CDVDAudioCodecAndroidMediaCodec::GetChannelMap()
 {
   CAEChannelInfo chaninfo;
 
-  for (int i=0; i<m_channels; ++i)
-    chaninfo += KnownChannels[i];
+  if (m_objectBasedAudio)
+  {
+    // Object-based audio: use generic indexed channels since positions don't matter.
+    // The data passes through ActiveAE untouched to AudioTrack with channel index mask.
+    for (int i = 0; i < m_channels; ++i)
+      chaninfo += static_cast<AEChannel>(AE_CH_UNKNOWN1 + i);
+  }
+  else
+  {
+    for (int i = 0; i < m_channels; ++i)
+      chaninfo += KnownChannels[i];
+  }
 
   return chaninfo;
 }
@@ -600,10 +667,25 @@ bool CDVDAudioCodecAndroidMediaCodec::ConfigureMediaCodec(void)
     return false;
   }
 
-  // There is no guarantee we'll get an INFO_OUTPUT_FORMAT_CHANGED (up to Android 4.3)
-  // Configure the output with defaults
+  // Query the actual output format after start() rather than using the input format
+  // as defaults, since the decoder may output different sample rate, channels, or
+  // PCM encoding than what was requested
   if (!m_decryptCodec)
-    ConfigureOutputFormat(&mediaformat);
+  {
+    CJNIMediaFormat outputFormat = m_codec->getOutputFormat();
+    if (xbmc_jnienv()->ExceptionCheck())
+    {
+      CLog::Log(LOGWARNING, "CDVDAudioCodecAndroidMediaCodec::ConfigureMediaCodec "
+                "failed to get output format, using input format as defaults");
+      xbmc_jnienv()->ExceptionDescribe();
+      xbmc_jnienv()->ExceptionClear();
+      ConfigureOutputFormat(&mediaformat);
+    }
+    else
+    {
+      ConfigureOutputFormat(&outputFormat);
+    }
+  }
 
   return true;
 }
@@ -621,7 +703,11 @@ void CDVDAudioCodecAndroidMediaCodec::GetData(DVDAudioFrame &frame)
   frame.framesOut = 0;
   frame.format.m_dataFormat = m_format.m_dataFormat;
   frame.format.m_channelLayout = m_format.m_channelLayout;
-  frame.framesize = (CAEUtil::DataFormatToBits(frame.format.m_dataFormat) >> 3) * frame.format.m_channelLayout.Count();
+  frame.format.m_objectBased = m_format.m_objectBased;
+  if (m_objectBasedAudio)
+    frame.framesize = (CAEUtil::DataFormatToBits(frame.format.m_dataFormat) >> 3) * m_channels;
+  else
+    frame.framesize = (CAEUtil::DataFormatToBits(frame.format.m_dataFormat) >> 3) * frame.format.m_channelLayout.Count();
 
   if (frame.framesize == 0)
     return;
@@ -781,10 +867,31 @@ void CDVDAudioCodecAndroidMediaCodec::ConfigureOutputFormat(CJNIMediaFormat* med
   if (mediaformat->containsKey(CJNIMediaFormat::KEY_CHANNEL_COUNT))
     m_channels = mediaformat->getInteger(CJNIMediaFormat::KEY_CHANNEL_COUNT);
 
+  // Detect PCM output encoding from MediaCodec (KEY_PCM_ENCODING, API 24+)
+  // ENCODING_PCM_16BIT = 2, ENCODING_PCM_FLOAT = 4
+  m_dataFormat = AE_FMT_S16NE;
+  if (mediaformat->containsKey("pcm-encoding"))
+  {
+    int pcmEncoding = mediaformat->getInteger("pcm-encoding");
+    if (pcmEncoding == jni::CJNIAudioFormat::ENCODING_PCM_FLOAT)
+      m_dataFormat = AE_FMT_FLOAT;
+    CLog::Log(LOGDEBUG,
+              "CDVDAudioCodecAndroidMediaCodec::ConfigureOutputFormat pcm-encoding({}), "
+              "using {}",
+              pcmEncoding, CAEUtil::DataFormatToStr(m_dataFormat));
+  }
+
+  // Detect object-based audio (e.g. Dolby Atmos outputting > 8 channels)
+  m_objectBasedAudio = (m_channels > 8);
+  if (m_objectBasedAudio)
+    CLog::Log(LOGINFO,
+              "CDVDAudioCodecAndroidMediaCodec::ConfigureOutputFormat "
+              "detected {}-channel object-based audio", m_channels);
+
   CLog::Log(LOGDEBUG,
             "CDVDAudioCodecAndroidMediaCodec::ConfigureOutputFormat "
-            "sample_rate({}), channel_count({})",
-            m_samplerate, m_channels);
+            "sample_rate({}), channel_count({}), format({})",
+            m_samplerate, m_channels, CAEUtil::DataFormatToStr(m_dataFormat));
 
   // clear any jni exceptions
   if (xbmc_jnienv()->ExceptionCheck())

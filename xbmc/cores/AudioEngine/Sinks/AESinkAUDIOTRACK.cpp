@@ -124,7 +124,7 @@ static int AEChannelMapToAUDIOTRACKChannelMask(CAEChannelInfo info)
   return CJNIAudioFormat::CHANNEL_OUT_STEREO;
 }
 
-jni::CJNIAudioTrack *CAESinkAUDIOTRACK::CreateAudioTrack(int stream, int sampleRate, int channelMask, int encoding, int bufferSize)
+jni::CJNIAudioTrack *CAESinkAUDIOTRACK::CreateAudioTrack(int stream, int sampleRate, int channelMask, int encoding, int bufferSize, bool useIndexMask)
 {
   jni::CJNIAudioTrack *jniAt = NULL;
 
@@ -135,7 +135,15 @@ jni::CJNIAudioTrack *CAESinkAUDIOTRACK::CreateAudioTrack(int stream, int sampleR
     attrBuilder.setContentType(CJNIAudioAttributes::CONTENT_TYPE_MUSIC);
 
     CJNIAudioFormatBuilder fmtBuilder;
-    fmtBuilder.setChannelMask(channelMask);
+    if (useIndexMask)
+    {
+      fmtBuilder.setChannelIndexMask(channelMask);
+      CLog::Log(LOGINFO, "AESinkAUDIOTRACK - Using channel index mask: {:#x}", channelMask);
+    }
+    else
+    {
+      fmtBuilder.setChannelMask(channelMask);
+    }
     fmtBuilder.setEncoding(encoding);
     fmtBuilder.setSampleRate(sampleRate);
 
@@ -326,7 +334,19 @@ bool CAESinkAUDIOTRACK::Initialize(AEAudioFormat &format, std::string &device)
      }
   }
 
-  if (m_format.m_dataFormat == AE_FMT_RAW)
+  if (m_format.m_objectBased)
+  {
+    // Object-based audio (e.g. Dolby Atmos from MediaCodec): pass decoded PCM
+    // through to AudioTrack with channel index mask for spatial rendering
+    m_passthrough = false;
+    m_useChannelIndexMask = true;
+    m_encoding = CJNIAudioFormat::ENCODING_PCM_16BIT;
+    m_format.m_dataFormat = AE_FMT_S16LE;
+    m_format.m_sampleRate = m_sink_sampleRate;
+    CLog::Log(LOGINFO, "CAESinkAUDIOTRACK::Initialize - Object-based audio with {} channels",
+              m_format.m_channelLayout.Count());
+  }
+  else if (m_format.m_dataFormat == AE_FMT_RAW)
   {
     m_passthrough = true;
     m_encoding = AEStreamFormatToATFormat(m_format.m_streamInfo.m_type);
@@ -399,8 +419,19 @@ bool CAESinkAUDIOTRACK::Initialize(AEAudioFormat &format, std::string &device)
   m_superviseAudioDelay =
       CServiceBroker::GetSettingsComponent()->GetAdvancedSettings()->m_superviseAudioDelay;
 
-  int atChannelMask = AEChannelMapToAUDIOTRACKChannelMask(m_format.m_channelLayout);
-  m_format.m_channelLayout  = AUDIOTRACKChannelMaskToAEChannelMap(atChannelMask);
+  int atChannelMask;
+  if (m_useChannelIndexMask)
+  {
+    // For object-based audio, use channel index mask with all N channels enabled
+    atChannelMask = (1 << m_format.m_channelLayout.Count()) - 1;
+    CLog::Log(LOGINFO, "CAESinkAUDIOTRACK::Initialize - Using channel index mask: {:#x} ({} channels)",
+              atChannelMask, m_format.m_channelLayout.Count());
+  }
+  else
+  {
+    atChannelMask = AEChannelMapToAUDIOTRACKChannelMask(m_format.m_channelLayout);
+    m_format.m_channelLayout  = AUDIOTRACKChannelMaskToAEChannelMap(atChannelMask);
+  }
   if (m_encoding == CJNIAudioFormat::ENCODING_IEC61937)
   {
     // keep above channel output if we do IEC61937 and got DTSHD or TrueHD by AudioEngine
@@ -413,9 +444,24 @@ bool CAESinkAUDIOTRACK::Initialize(AEAudioFormat &format, std::string &device)
   {
     CLog::Log(LOGINFO, "Trying to open: samplerate: {}, channelMask: {}, encoding: {}",
               m_sink_sampleRate, atChannelMask, m_encoding);
-    int min_buffer = CJNIAudioTrack::getMinBufferSize(m_sink_sampleRate,
-                                                         atChannelMask,
-                                                         m_encoding);
+
+    int min_buffer;
+    if (m_useChannelIndexMask)
+    {
+      // getMinBufferSize doesn't support channel index masks, compute manually:
+      // 128ms worth of PCM data as minimum buffer
+      int bytesPerSample = (m_encoding == CJNIAudioFormat::ENCODING_PCM_FLOAT) ? 4 : 2;
+      int frameSize = m_format.m_channelLayout.Count() * bytesPerSample;
+      min_buffer = static_cast<int>(0.128 * m_sink_sampleRate * frameSize);
+      CLog::Log(LOGINFO, "Object-based audio: computed min buffer size {} bytes ({} ch, {} Hz)",
+                min_buffer, m_format.m_channelLayout.Count(), m_sink_sampleRate);
+    }
+    else
+    {
+      min_buffer = CJNIAudioTrack::getMinBufferSize(m_sink_sampleRate,
+                                                     atChannelMask,
+                                                     m_encoding);
+    }
 
     if (min_buffer < 0)
     {
@@ -559,7 +605,7 @@ bool CAESinkAUDIOTRACK::Initialize(AEAudioFormat &format, std::string &device)
 
     m_jniAudioFormat = m_encoding;
     m_at_jni = CreateAudioTrack(stream, m_sink_sampleRate, atChannelMask,
-                                m_encoding, m_min_buffer_size);
+                                m_encoding, m_min_buffer_size, m_useChannelIndexMask);
 
     if (!IsInitialized())
     {

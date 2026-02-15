@@ -1314,6 +1314,15 @@ void CActiveAE::Configure(AEAudioFormat *desiredFmt)
 
       sinkInputFormat = m_sinkFormat;
     }
+    else if (inputFormat.m_objectBased)
+    {
+      // Object-based audio (e.g. Dolby Atmos decoded PCM): pass through untouched.
+      // Skip float conversion and FFmpeg channel layout mapping — these don't work
+      // for generic indexed channels (AE_CH_UNKNOWN*).
+      inputFormat.m_frames = m_sinkFormat.m_frames;
+      outputFormat = inputFormat;
+      sinkInputFormat = m_sinkFormat;
+    }
     else
     {
       outputFormat = m_sinkFormat;
@@ -1652,6 +1661,10 @@ void CActiveAE::ApplySettingsToFormat(AEAudioFormat& format,
   int oldMode = m_mode;
   if (mode)
     *mode = MODE_PCM;
+
+  // object-based audio (e.g. Dolby Atmos decoded PCM): keep format untouched
+  if (format.m_objectBased)
+    return;
 
   // raw pass through
   if (format.m_dataFormat == AE_FMT_RAW)

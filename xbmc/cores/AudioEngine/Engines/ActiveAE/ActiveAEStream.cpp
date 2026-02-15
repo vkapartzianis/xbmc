@@ -72,6 +72,15 @@ void CActiveAEStream::ResetFreeBuffers()
 
 void CActiveAEStream::InitRemapper()
 {
+  // Object-based audio (e.g. Dolby Atmos) channels are not speaker-position-based
+  // and cannot be mapped to FFmpeg channel layouts — skip remapping entirely
+  if (m_format.m_objectBased)
+  {
+    CLog::Log(LOGDEBUG, "CActiveAEStream::{} - skipping remapper for object-based audio",
+              __FUNCTION__);
+    return;
+  }
+
   // check if input format follows ffmpeg channel mask
   bool needRemap = false;
   unsigned int avLast, avCur = 0;

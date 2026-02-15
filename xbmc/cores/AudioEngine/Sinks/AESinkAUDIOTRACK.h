@@ -43,7 +43,7 @@ public:
   static std::unique_ptr<IAESink> Create(std::string& device, AEAudioFormat& desiredFormat);
 
 protected:
-  static jni::CJNIAudioTrack *CreateAudioTrack(int stream, int sampleRate, int channelMask, int encoding, int bufferSize);
+  static jni::CJNIAudioTrack *CreateAudioTrack(int stream, int sampleRate, int channelMask, int encoding, int bufferSize, bool useIndexMask = false);
   static bool IsSupported(int sampleRateInHz, int channelConfig, int audioFormat);
   static bool VerifySinkConfiguration(int sampleRate,
                                       int channelMask,
@@ -88,6 +88,7 @@ private:
   unsigned int       m_sink_frameSize;
   unsigned int       m_sink_sampleRate;
   bool               m_passthrough;
+  bool               m_useChannelIndexMask = false;
   double             m_audiotrackbuffer_sec;
   double m_audiotrackbuffer_sec_orig;
   int                m_encoding;
