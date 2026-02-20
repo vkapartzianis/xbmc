@@ -155,7 +155,7 @@
         <setting id="videoplayer.usemediacodechybridsurface" type="boolean" label="13470" help="36544">
           <requirement>HAS_MEDIACODEC</requirement>
           <level>2</level>
-          <default>false</default>
+          <default>true</default>
           <updates>
             <update type="change" />
           </updates>

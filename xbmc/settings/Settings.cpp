@@ -24,6 +24,9 @@
 #if defined(TARGET_POSIX)
 #include "platform/posix/PosixTimezone.h"
 #endif // defined(TARGET_POSIX)
+#if defined(TARGET_ANDROID)
+#include "windowing/android/AndroidUtils.h"
+#endif // defined(TARGET_ANDROID)
 #include "network/upnp/UPnPSettings.h"
 #include "network/WakeOnAccess.h"
 #if defined(TARGET_DARWIN_OSX) and defined(HAS_XBMCHELPER)
@@ -378,6 +381,22 @@ void CSettings::InitializeDefaults()
     else
       std::static_pointer_cast<CSettingInt>(setting)->SetDefault(POWERSTATE_SHUTDOWN);
   }
+
+#if defined(TARGET_ANDROID)
+  // On Quest devices, Surface mode causes washed-out SDR colors because Horizon OS does not
+  // expand limited-range values. Default to Hybrid Surface mode instead, which gives correct
+  // full-range SDR colors while still handling HDR correctly via our runtime override.
+  if (CAndroidUtils::IsQuestDevice())
+  {
+    auto setting =
+        GetSettingsManager()->GetSetting(CSettings::SETTING_VIDEOPLAYER_USEMEDIACODECSURFACE);
+    if (!setting)
+      CLog::Log(LOGERROR, "Failed to load setting for: {}",
+                CSettings::SETTING_VIDEOPLAYER_USEMEDIACODECSURFACE);
+    else
+      std::static_pointer_cast<CSettingBool>(setting)->SetDefault(false);
+  }
+#endif // defined(TARGET_ANDROID)
 
   // Initialize deviceUUID if not already set, used in zeroconf advertisements.
   std::shared_ptr<CSettingString> deviceUUID = std::static_pointer_cast<CSettingString>(GetSettingsManager()->GetSetting(CSettings::SETTING_SERVICES_DEVICEUUID));
