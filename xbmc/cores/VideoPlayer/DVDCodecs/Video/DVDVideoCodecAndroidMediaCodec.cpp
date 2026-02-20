@@ -377,6 +377,23 @@ bool CDVDVideoCodecAndroidMediaCodec::Open(CDVDStreamInfo &hints, CDVDCodecOptio
   m_state = MEDIACODEC_STATE_UNINITIALIZED;
   m_codecControlFlags = 0;
   m_hints = hints;
+
+  // On Quest devices, the plain MediaCodec (SurfaceTexture/GLES) path cannot display HDR
+  // content correctly: Adreno tone-maps the OES texture to SDR during SurfaceTexture→GL
+  // conversion, so HDR values are lost before they reach the Horizon OS compositor.
+  // Force Surface mode for HDR content so MediaCodec decodes directly to the VideoView
+  // Surface and Horizon OS handles HDR tone-mapping natively.
+  if (!m_render_surface && CAndroidUtils::IsQuestDevice() &&
+      (m_hints.colorTransferCharacteristic == AVCOL_TRC_SMPTE2084 ||
+       m_hints.colorTransferCharacteristic == AVCOL_TRC_ARIB_STD_B67 ||
+       m_hints.hdrType == StreamHdrType::HDR_TYPE_DOLBYVISION))
+  {
+    m_render_surface = true;
+    CLog::Log(LOGINFO,
+              "CDVDVideoCodecAndroidMediaCodec::Open: Quest HDR content detected, forcing "
+              "surface mode for correct HDR rendering");
+  }
+
   m_indexInputBuffer = -1;
   m_dtsShift = DVD_NOPTS_VALUE;
   m_useDTSforPTS = false;
@@ -1595,9 +1612,20 @@ bool CDVDVideoCodecAndroidMediaCodec::ConfigureMediaCodec(void)
       return false;
     }
 
-    if (m_render_hybrid)
+    // For HDR content (PQ or HLG transfer function), the hybrid renderer's intermediate
+    // SurfaceTexture→GLES pass strips HDR metadata: Horizon OS never receives an HDR
+    // surface and renders the video as SDR with incorrect colors.  Bypass the hybrid
+    // renderer and decode directly to the VideoView Surface instead, so Horizon OS can
+    // handle HDR tone-mapping natively — the same path used by plain Surface mode.
+    const bool isHDRContent = (m_hints.colorTransferCharacteristic == AVCOL_TRC_SMPTE2084 ||
+                               m_hints.colorTransferCharacteristic == AVCOL_TRC_ARIB_STD_B67 ||
+                               m_hints.hdrType == StreamHdrType::HDR_TYPE_DOLBYVISION);
+
+    if (m_render_hybrid && !isHDRContent)
     {
-      // Hybrid renderer: decode to SurfaceTexture, render via shader to Surface
+      // SDR: use the hybrid renderer.  Adreno's internal YUV→RGB conversion inside
+      // SurfaceTexture already expands limited range to full range, giving correct
+      // full-RGB output without any additional shader correction.
       m_surfaceRenderer =
           std::make_shared<jni::CJNIXBMCVideoSurfaceRenderer>(outputSurface);
       if (xbmc_jnienv()->ExceptionCheck())
@@ -1630,7 +1658,14 @@ bool CDVDVideoCodecAndroidMediaCodec::ConfigureMediaCodec(void)
     }
     else
     {
-      // Direct surface mode: decode straight to VideoView surface
+      // Direct surface mode: decode straight to VideoView surface.
+      // For HDR content this is required: Horizon OS handles HDR tone-mapping natively
+      // when MediaCodec writes directly to a Surface, whereas the hybrid renderer's
+      // intermediate SurfaceTexture path loses the HDR color-space metadata.
+      if (m_render_hybrid && isHDRContent)
+        CLog::Log(LOGINFO,
+                  "CDVDVideoCodecAndroidMediaCodec: HDR content detected, bypassing hybrid "
+                  "surface renderer to preserve HDR metadata for Horizon OS compositor");
       m_jnivideosurface = outputSurface;
       m_formatname += "(S)";
     }

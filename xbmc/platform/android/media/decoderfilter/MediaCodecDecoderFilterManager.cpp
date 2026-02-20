@@ -66,6 +66,13 @@ CMediaCodecDecoderFilterManager::CMediaCodecDecoderFilterManager()
 
     add(CDecoderFilter(codecname, flags, minheight));
     CLog::Log(LOGINFO, "Mediacodec decoder: {}", codecname);
+
+    if (tmp.find("dolby") != std::string::npos)
+    {
+      std::vector<std::string> types = codec_info.getSupportedTypes();
+      CLog::Log(LOGINFO, "Mediacodec decoder: {} supports MIME types: {}", codecname,
+                StringUtils::Join(types, ", "));
+    }
   }
   Save();
 }
