@@ -55,8 +55,6 @@ void CEventLoop::run(IActivityHandler &activityHandler, IInputHandler &inputHand
 
 void CEventLoop::processActivity(int32_t command)
 {
-//CXBMCApp::android_printf("processActivity: command=%d", command);
-
   switch (command)
   {
     case APP_CMD_CONFIG_CHANGED:
@@ -125,19 +123,15 @@ void CEventLoop::processActivity(int32_t command)
 
 // =============================================================================
 
-//#include "QuestScrollMapper.h"
 #include "QuestScrollMapperAdvanced.h"
 // -----------------------------------------------------------------------------
 
 DirectionalKeys_ scroll_keys_;
 
 #include "ServiceBroker.h"
-#include "XBMCApp.h"
 #include "application/AppInboundProtocol.h"
 #include "input/keyboard/XBMC_keysym.h"
-#include "input/keyboard/XBMC_vkeys.h"
 #include "input/mouse/MouseStat.h"
-#include "windowing/android/WinSystemAndroid.h"
 
 static std::map<int32_t, uint16_t> xKeyMap = {
 //{ AKEYCODE_HOME            , XBMCK_HOME },
@@ -172,17 +166,6 @@ void xKey(uint32_t code, uint16_t key, bool up)
   xEvent(newEvent);
 }
 
-void xButton(uint16_t key, uint32_t duration)     // needs XBMCVK_* not XBMCK_*
-{
-  XBMC_Event newEvent = {};
-
-  newEvent.type = XBMC_BUTTON;
-  newEvent.keybutton.button = key;
-  newEvent.keybutton.holdtime = duration;
-
-  xEvent(newEvent);
-}
-
 void xMouseMove(float x, float y)
 {
   XBMC_Event newEvent = {};
@@ -206,10 +189,19 @@ void xMouseButton(float x, float y, uint16_t button, bool up)
   xEvent(newEvent);
 }
 
-int64_t last_action_time_ = 0;
 int64_t last_scroll_time_ = 0;
-float last_motion_x_ = 0.0f;
-float last_motion_y_ = 0.0f;
+int64_t last_lbdown_time_ = 0;
+float last_lclick_x_ = 0.0f;
+float last_lclick_y_ = 0.0f;
+
+// Quest double-click: suppress HOVER_MOVE during the double-click window so pointer drift
+// doesn't reset STATE_IN_DOUBLE_CLICK in MouseStat, and snap the second DOWN to the first
+// UP position so InClickRange always passes. Must match double_click_time in MouseStat.h.
+static constexpr int64_t QUEST_DOUBLE_CLICK_WINDOW_NS = 500LL * 1000000LL;
+// Quest scroll: suppress HOVER_MOVE for this duration after a joystick scroll event so that
+// incidental pointer drift from thumbstick movement doesn't move the cursor and interrupt
+// joystick-driven navigation.
+static constexpr int64_t QUEST_SCROLL_EVENT_WINDOW_NS = 1000LL * 1000000LL;
 
 // =============================================================================
 
@@ -218,9 +210,6 @@ int32_t CEventLoop::processInput(AInputEvent* event)
   int32_t rtn    = 0;
   int32_t type   = AInputEvent_getType(event);
   int32_t source = AInputEvent_getSource(event);
-
-  int32_t deviceId = AInputEvent_getDeviceId(event);
-  CXBMCApp::android_printf("processInput: type=%d, source=%d, deviceId=%d", type, source, deviceId);
 
   // handle Quest controller joystick input
   if (CAndroidUtils::IsQuestDevice() && source == AINPUT_SOURCE_CLASS_POINTER)
@@ -231,8 +220,6 @@ int32_t CEventLoop::processInput(AInputEvent* event)
       int8_t pointerAction = eventAction & AMOTION_EVENT_ACTION_MASK;
       size_t pointerPointerIdx = eventAction >> AMOTION_EVENT_ACTION_POINTER_INDEX_SHIFT;
 
-      CXBMCApp::android_printf("pointerInput: action=%d, index=%d", pointerAction, pointerPointerIdx);
-
       if (pointerAction == AMOTION_EVENT_ACTION_SCROLL)
       {
         last_scroll_time_ = AMotionEvent_getEventTime(event);
@@ -240,11 +227,8 @@ int32_t CEventLoop::processInput(AInputEvent* event)
         float scroll_x = AMotionEvent_getAxisValue(event, AMOTION_EVENT_AXIS_HSCROLL, pointerPointerIdx);
         float scroll_y = AMotionEvent_getAxisValue(event, AMOTION_EVENT_AXIS_VSCROLL, pointerPointerIdx);
 
-        CXBMCApp::android_printf("scroll: idx:%d, x:%f, y:%f", pointerPointerIdx, (double)scroll_x, (double)scroll_y);
-
         auto keyCallback = [](int keycode, bool isPressed, bool isRepeat)
         {
-          CXBMCApp::android_printf("scroll: keycode:%d, key:%d, isRepeat:%d", keycode, xKeyMap.at(keycode), isRepeat);
           xKey(keycode, xKeyMap.at(keycode), !isPressed);
         };
 
@@ -265,17 +249,40 @@ int32_t CEventLoop::processInput(AInputEvent* event)
     float x = AMotionEvent_getX(event, pointerPointerIdx);
     float y = AMotionEvent_getY(event, pointerPointerIdx);
 
-    CXBMCApp::android_printf("pointerInput: action=%d, index=%d, x=%f, y=%f", pointerAction, pointerPointerIdx, (double)x, (double)y);
-    
     switch(pointerAction)
     {
     case AMOTION_EVENT_ACTION_HOVER_MOVE:
-      if ((AMotionEvent_getEventTime(event) - last_scroll_time_) / 1e6 > 1000) xMouseMove(x, y);
+    {
+      int64_t now = AMotionEvent_getEventTime(event);
+      // Suppress cursor movement during the double-click window. MouseStat processes
+      // XBMC_MOUSEMOTION events through the button state machine: if the position
+      // drifts more than 5px from the first click's UP position, STATE_IN_DOUBLE_CLICK
+      // is reset to STATE_RELEASED before the second DOWN arrives, making double-click
+      // impossible regardless of where the second click lands.
+      if (now - last_lbdown_time_ < QUEST_DOUBLE_CLICK_WINDOW_NS)
+        return true;
+      // Suppress cursor movement after a joystick scroll event. The thumbstick
+      // produces both scroll and HOVER_MOVE events; without this guard the
+      // incidental pointer drift would move the cursor and interrupt navigation.
+      if (now - last_scroll_time_ > QUEST_SCROLL_EVENT_WINDOW_NS)
+        xMouseMove(x, y);
       return true;
+    }
     case AMOTION_EVENT_ACTION_DOWN:
+    {
+      int64_t now = AMotionEvent_getEventTime(event);
+      if (now - last_lbdown_time_ < QUEST_DOUBLE_CLICK_WINDOW_NS)
+      {
+        x = last_lclick_x_;
+        y = last_lclick_y_;
+      }
       xMouseButton(x, y, XBMC_BUTTON_LEFT, false);
       return true;
+    }
     case AMOTION_EVENT_ACTION_UP:
+      last_lbdown_time_ = AMotionEvent_getEventTime(event);
+      last_lclick_x_ = x;
+      last_lclick_y_ = y;
       xMouseButton(x, y, XBMC_BUTTON_LEFT, true);
       return true;
     }
