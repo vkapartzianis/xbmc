@@ -193,6 +193,8 @@ int64_t last_scroll_time_ = 0;
 int64_t last_lbdown_time_ = 0;
 float last_lclick_x_ = 0.0f;
 float last_lclick_y_ = 0.0f;
+float last_hoverm_x_ = 0.0f;
+float last_hoverm_y_ = 0.0f;
 
 // Quest double-click: suppress HOVER_MOVE during the double-click window so pointer drift
 // doesn't reset STATE_IN_DOUBLE_CLICK in MouseStat, and snap the second DOWN to the first
@@ -202,6 +204,11 @@ static constexpr int64_t QUEST_DOUBLE_CLICK_WINDOW_NS = 500LL * 1000000LL;
 // incidental pointer drift from thumbstick movement doesn't move the cursor and interrupt
 // joystick-driven navigation.
 static constexpr int64_t QUEST_SCROLL_EVENT_WINDOW_NS = 1000LL * 1000000LL;
+// Quest hover dead zone: suppress HOVER_MOVE events where the cursor has moved less than
+// this many pixels from the last sent position. Ray jitter from the Quest controller can
+// cause the cursor to drift across a control's hit boundary even when the pointer appears
+// stationary, triggering repeated hover-out/hover-in transitions on the focused control.
+static constexpr float QUEST_HOVER_DEAD_ZONE_PX = 3.0f;
 
 // =============================================================================
 
@@ -265,7 +272,16 @@ int32_t CEventLoop::processInput(AInputEvent* event)
       // produces both scroll and HOVER_MOVE events; without this guard the
       // incidental pointer drift would move the cursor and interrupt navigation.
       if (now - last_scroll_time_ > QUEST_SCROLL_EVENT_WINDOW_NS)
-        xMouseMove(x, y);
+      {
+        float dx = x - last_hoverm_x_;
+        float dy = y - last_hoverm_y_;
+        if (dx * dx + dy * dy > QUEST_HOVER_DEAD_ZONE_PX * QUEST_HOVER_DEAD_ZONE_PX)
+        {
+          xMouseMove(x, y);
+          last_hoverm_x_ = x;
+          last_hoverm_y_ = y;
+        }
+      }
       return true;
     }
     case AMOTION_EVENT_ACTION_DOWN:
