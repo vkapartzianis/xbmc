@@ -59,7 +59,7 @@
         android:requestLegacyExternalStorage="true">
         <meta-data
             android:name="com.oculus.supportedDevices"
-            android:value="quest|quest2|quest3|questpro" />
+            android:value="quest|quest2|quest3|quest3s|questpro" />
         <activity
             android:name=".Splash"
             android:configChanges="orientation|keyboard|keyboardHidden|navigation|touchscreen|screenLayout|screenSize|colorMode"
