@@ -56,6 +56,7 @@
               <option label="36035">1</option> <!-- ADJUST_REFRESHRATE_ALWAYS -->
               <option label="36036">2</option> <!-- ADJUST_REFRESHRATE_ON_STARTSTOP -->
               <option label="36050">3</option> <!-- ADJUST_REFRESHRATE_ON_START -->
+              <option label="36055">4</option> <!-- ADJUST_REFRESHRATE_ANDROID_AUTO -->
             </options>
           </constraints>
           <control type="list" format="string" />

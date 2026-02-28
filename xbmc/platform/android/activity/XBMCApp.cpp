@@ -778,6 +778,50 @@ void CXBMCApp::SetDisplayModeCallback(void* modeVariant)
 
 void CXBMCApp::SetRefreshRate(float rate)
 {
+  // On Quest, the standard preferredRefreshRate/display-event mechanism is
+  // ignored by Horizon OS. Try Shizuku (requires shell privilege) first;
+  // if unavailable fall back to ANativeWindow_setFrameRate on the main window.
+  if (CAndroidUtils::IsQuestDevice())
+  {
+    if (rate < 1.0f)
+    {
+      // rate=0 is used as a signal to restore the pre-playback refresh rate.
+      if (rate == 0.0f)
+        if (auto* jni = CJNIMainActivity::GetAppInstance())
+          jni->setVideoRefreshRate(0);
+      return;
+    }
+    m_refreshRate = rate;
+    // Map content fps or display rate to the best Quest display Hz.
+    // If rate is already a plausible display Hz (>= 72) use it directly.
+    // Otherwise find the smallest integer multiple N such that
+    // round(rate * N) falls in the [72, 120] Hz window.
+    int hz;
+    if (rate >= 72.0f)
+    {
+      hz = static_cast<int>(std::round(rate));
+    }
+    else
+    {
+      hz = 90; // safe fallback
+      for (int n = 2; n <= 10; ++n)
+      {
+        const int candidate = static_cast<int>(std::round(rate * n));
+        if (candidate >= 72 && candidate <= 120)
+        {
+          hz = candidate;
+          break;
+        }
+      }
+    }
+    CLog::Log(LOGINFO, "CXBMCApp::SetRefreshRate: Quest {:.3f} -> {}Hz", rate, hz);
+    if (auto* jni = CJNIMainActivity::GetAppInstance())
+      jni->setVideoRefreshRate(hz);
+    if (m_window)
+      m_window->SetFrameRate(rate);
+    return;
+  }
+
   if (rate < 1.0f)
     return;
 

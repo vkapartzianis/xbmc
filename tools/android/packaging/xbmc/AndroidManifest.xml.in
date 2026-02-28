@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?><!-- BEGIN_INCLUDE(manifest) -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:installLocation="auto"
     android:versionCode="@APP_VERSION_CODE_ANDROID@"
     android:versionName="@APP_VERSION@">
+
+    <uses-sdk tools:overrideLibrary="rikka.shizuku.provider,rikka.shizuku.api,rikka.shizuku.shared,rikka.shizuku.aidl" />
 
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
@@ -12,6 +15,7 @@
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="moe.shizuku.manager.permission.API_V23" />
 
     <uses-feature
         android:name="android.hardware.vr.headtracking"
@@ -177,6 +181,14 @@
            android:name=".channels.SyncProgramsJobService"
            android:exported="false"
            android:permission="android.permission.BIND_JOB_SERVICE" />
+
+        <provider
+            android:name="rikka.shizuku.ShizukuProvider"
+            android:authorities="@APP_PACKAGE@.shizuku"
+            android:multiprocess="false"
+            android:enabled="true"
+            android:exported="true"
+            android:permission="android.permission.INTERACT_ACROSS_USERS_FULL" />
 
     </application>
 

@@ -19161,7 +19161,13 @@ msgctxt "#36053"
 msgid "Tuner Device"
 msgstr ""
 
-#empty strings from id 36054 to 36095
+#. adjust refreshrate
+#: system/settings/settings.xml
+msgctxt "#36055"
+msgid "Auto (Android only)"
+msgstr ""
+
+#empty strings from id 36056 to 36095
 
 #. Label of setting "System / Display / Use system HDR/SDR brightness balance"
 #: system/settings/settings.xml

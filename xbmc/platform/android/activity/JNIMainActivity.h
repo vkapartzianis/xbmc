@@ -40,6 +40,7 @@ public:
   static void unregisterMediaButtonEventReceiver();
 
   CJNIRect getDisplayRect();
+  void setVideoRefreshRate(int hz);
 
 private:
   static CJNIMainActivity *m_appInstance;

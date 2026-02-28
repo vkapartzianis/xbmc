@@ -33,6 +33,7 @@
 #include "utils/StringUtils.h"
 #include "utils/TimeUtils.h"
 #include "utils/log.h"
+#include "windowing/GraphicContext.h"
 #include "windowing/android/AndroidUtils.h"
 
 #include "platform/android/activity/JNIXBMCSurfaceTextureOnFrameAvailableListener.h"
@@ -1012,8 +1013,6 @@ void CDVDVideoCodecAndroidMediaCodec::Dispose()
   {
     if (CJNIBase::GetSDKVersion() >= 30 && m_jnivideoview)
     {
-      // Clear the frame rate hint before releasing the surface so the
-      // compositor can return to its default refresh rate behaviour.
       CJNISurface surface = m_jnivideoview->getSurface();
       surface.setFrameRate(0.0f, CJNISurface::FRAME_RATE_COMPATIBILITY_DEFAULT,
                            CJNISurface::CHANGE_FRAME_RATE_ONLY_IF_SEAMLESS);
@@ -1029,6 +1028,15 @@ void CDVDVideoCodecAndroidMediaCodec::Dispose()
   else if (CJNIBase::GetSDKVersion() >= 30)
   {
     CXBMCApp::Get().SetVideoSurfaceFrameRate(0.0f);
+  }
+
+  // Restore the Quest display refresh rate to the pre-playback value.
+  {
+    const int adjustRefreshRate = CServiceBroker::GetSettingsComponent()->GetSettings()->GetInt(
+        CSettings::SETTING_VIDEOPLAYER_ADJUSTREFRESHRATE);
+    if (CAndroidUtils::IsQuestDevice() && adjustRefreshRate != ADJUST_REFRESHRATE_OFF &&
+        adjustRefreshRate != ADJUST_REFRESHRATE_ANDROID_AUTO)
+      CXBMCApp::Get().SetRefreshRate(0.0f);
   }
 
   m_bitstream.reset();
@@ -1990,9 +1998,13 @@ void CDVDVideoCodecAndroidMediaCodec::UpdateFpsDuration()
   const float fps = static_cast<float>(m_hints.fpsrate) / m_hints.fpsscale;
   m_processInfo.SetVideoFps(fps);
 
-  // Signal the video content frame rate to the Horizon OS compositor so it
-  // can select an optimal display refresh rate (e.g. 72 Hz for 24 fps content).
-  if (CJNIBase::GetSDKVersion() >= 30)
+  const int adjustRefreshRate = CServiceBroker::GetSettingsComponent()->GetSettings()->GetInt(
+      CSettings::SETTING_VIDEOPLAYER_ADJUSTREFRESHRATE);
+
+  // "Auto (Android only)": hint the content frame rate to the Android
+  // compositor so the OS can automatically select the best display refresh rate.
+  // Only active when the user explicitly chooses this mode.
+  if (CJNIBase::GetSDKVersion() >= 30 && adjustRefreshRate == ADJUST_REFRESHRATE_ANDROID_AUTO)
   {
     if (m_render_surface && m_jnivideoview)
     {
@@ -2013,6 +2025,13 @@ void CDVDVideoCodecAndroidMediaCodec::UpdateFpsDuration()
                          "ANativeWindow_setFrameRate({:.3f}) called on main window", fps);
     }
   }
+
+  // Quest: ChooseBestResolution() only ever returns the single current
+  // resolution entry, so the normal windowing path never calls SetRefreshRate().
+  // Call it directly here so Shizuku can set an optimal display rate.
+  if (CAndroidUtils::IsQuestDevice() && adjustRefreshRate != ADJUST_REFRESHRATE_OFF &&
+      adjustRefreshRate != ADJUST_REFRESHRATE_ANDROID_AUTO)
+    CXBMCApp::Get().SetRefreshRate(fps);
 
   CLog::Log(LOGDEBUG,
             "CDVDVideoCodecAndroidMediaCodec::UpdateFpsDuration fpsRate:{} fpsscale:{}, fpsDur:{}",

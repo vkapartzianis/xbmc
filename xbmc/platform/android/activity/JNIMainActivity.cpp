@@ -162,6 +162,11 @@ CJNIRect CJNIMainActivity::getDisplayRect()
                                "getDisplayRect", "()Landroid/graphics/Rect;");
 }
 
+void CJNIMainActivity::setVideoRefreshRate(int hz)
+{
+  call_method<void>(m_context, "setVideoRefreshRate", "(I)V", (jint)hz);
+}
+
 void CJNIMainActivity::registerMediaButtonEventReceiver()
 {
   call_method<void>(m_context,
