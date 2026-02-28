@@ -1010,6 +1010,14 @@ void CDVDVideoCodecAndroidMediaCodec::Dispose()
   m_InstanceGuard.exchange(false);
   if (m_render_surface)
   {
+    if (CJNIBase::GetSDKVersion() >= 30 && m_jnivideoview)
+    {
+      // Clear the frame rate hint before releasing the surface so the
+      // compositor can return to its default refresh rate behaviour.
+      CJNISurface surface = m_jnivideoview->getSurface();
+      surface.setFrameRate(0.0f, CJNISurface::FRAME_RATE_COMPATIBILITY_DEFAULT,
+                           CJNISurface::CHANGE_FRAME_RATE_ONLY_IF_SEAMLESS);
+    }
     if (m_surfaceRenderer)
     {
       m_surfaceRenderer->release();
@@ -1017,6 +1025,10 @@ void CDVDVideoCodecAndroidMediaCodec::Dispose()
     }
     m_jnivideoview->release();
     m_jnivideoview.reset();
+  }
+  else if (CJNIBase::GetSDKVersion() >= 30)
+  {
+    CXBMCApp::Get().SetVideoSurfaceFrameRate(0.0f);
   }
 
   m_bitstream.reset();
@@ -1966,7 +1978,32 @@ void CDVDVideoCodecAndroidMediaCodec::UpdateFpsDuration()
   else
     m_fpsDuration = 1;
 
-  m_processInfo.SetVideoFps(static_cast<float>(m_hints.fpsrate) / m_hints.fpsscale);
+  const float fps = static_cast<float>(m_hints.fpsrate) / m_hints.fpsscale;
+  m_processInfo.SetVideoFps(fps);
+
+  // Signal the video content frame rate to the Horizon OS compositor so it
+  // can select an optimal display refresh rate (e.g. 72 Hz for 24 fps content).
+  if (CJNIBase::GetSDKVersion() >= 30)
+  {
+    if (m_render_surface && m_jnivideoview)
+    {
+      // Surface and Hybrid modes: the VideoView surface is the compositor-facing
+      // surface. In Hybrid mode m_jnivideosurface is the SurfaceTexture input
+      // (consumed by GL), so we signal on the VideoView output surface instead.
+      CJNISurface surface = m_jnivideoview->getSurface();
+      surface.setFrameRate(fps, CJNISurface::FRAME_RATE_COMPATIBILITY_FIXED_SOURCE,
+                           CJNISurface::CHANGE_FRAME_RATE_ALWAYS);
+      CLog::Log(LOGINFO, "CDVDVideoCodecAndroidMediaCodec::UpdateFpsDuration: "
+                         "Surface.setFrameRate({:.3f}) called on VideoView surface", fps);
+    }
+    else if (!m_render_surface)
+    {
+      // Plain EGL mode: video is composited through the main app GLES window.
+      CXBMCApp::Get().SetVideoSurfaceFrameRate(fps);
+      CLog::Log(LOGINFO, "CDVDVideoCodecAndroidMediaCodec::UpdateFpsDuration: "
+                         "ANativeWindow_setFrameRate({:.3f}) called on main window", fps);
+    }
+  }
 
   CLog::Log(LOGDEBUG,
             "CDVDVideoCodecAndroidMediaCodec::UpdateFpsDuration fpsRate:{} fpsscale:{}, fpsDur:{}",
@@ -1981,7 +2018,8 @@ void CDVDVideoCodecAndroidMediaCodec::surfaceCreated(CJNISurfaceHolder holder)
 {
   if (m_state == MEDIACODEC_STATE_STOPPED)
   {
-    ConfigureMediaCodec();
+    if (ConfigureMediaCodec())
+      UpdateFpsDuration();
   }
 }
 

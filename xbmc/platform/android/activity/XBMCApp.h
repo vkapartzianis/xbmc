@@ -67,6 +67,7 @@ public:
   ~CNativeWindow();
 
   bool SetBuffersGeometry(int width, int height, int format);
+  bool SetFrameRate(float frameRate);
   int32_t GetWidth() const;
   int32_t GetHeight() const;
 
@@ -180,6 +181,7 @@ public:
   static void SetSystemVolume(float percent);
 
   void SetRefreshRate(float rate);
+  void SetVideoSurfaceFrameRate(float fps);
   void SetDisplayMode(int mode, float rate);
   int GetDPI() const;
   void SetVideoLayoutBackgroundColor(const int color);

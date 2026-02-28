@@ -50,6 +50,7 @@
 #include "video/VideoInfoTag.h"
 #include "windowing/GraphicContext.h"
 #include "windowing/WinEvents.h"
+#include "windowing/android/AndroidUtils.h"
 #include "windowing/android/VideoSyncAndroid.h"
 #include "windowing/android/WinSystemAndroid.h"
 
@@ -58,6 +59,7 @@
 #include "platform/android/network/NetworkAndroid.h"
 #include "platform/android/powermanagement/AndroidPowerSyscall.h"
 
+#include <dlfcn.h>
 #include <memory>
 #include <mutex>
 #include <sstream>
@@ -145,6 +147,41 @@ bool CNativeWindow::SetBuffersGeometry(int width, int height, int format)
   if (m_window)
     return (ANativeWindow_setBuffersGeometry(m_window, width, height, format) == 0);
 
+  return false;
+}
+
+bool CNativeWindow::SetFrameRate(float frameRate)
+{
+  if (!m_window)
+    return false;
+
+  // ANativeWindow_setFrameRate / ANativeWindow_setFrameRateWithChangeStrategy
+  // were introduced in API 30/31. The integer values for the constants are
+  // part of the stable ABI; resolve the functions dynamically so this binary
+  // stays compatible with builds targeting API < 30.
+  //   compatibility: 0 = DEFAULT, 1 = FIXED_SOURCE
+  //   changeStrategy: 0 = ONLY_IF_SEAMLESS, 1 = ALWAYS
+  const int8_t compatibility = frameRate > 0.0f ? 1 : 0;
+
+  if (CJNIBase::GetSDKVersion() >= 31)
+  {
+    using Fn = int32_t (*)(ANativeWindow*, float, int8_t, int8_t);
+    static const auto pfn = reinterpret_cast<Fn>(
+        dlsym(RTLD_DEFAULT, "ANativeWindow_setFrameRateWithChangeStrategy"));
+    if (pfn)
+    {
+      const int8_t changeStrategy = frameRate > 0.0f ? 1 : 0;
+      return pfn(m_window, frameRate, compatibility, changeStrategy) == 0;
+    }
+  }
+  if (CJNIBase::GetSDKVersion() >= 30)
+  {
+    using Fn = int32_t (*)(ANativeWindow*, float, int8_t);
+    static const auto pfn =
+        reinterpret_cast<Fn>(dlsym(RTLD_DEFAULT, "ANativeWindow_setFrameRate"));
+    if (pfn)
+      return pfn(m_window, frameRate, compatibility) == 0;
+  }
   return false;
 }
 
@@ -761,6 +798,17 @@ void CXBMCApp::SetRefreshRate(float rate)
   CVariant *variant = new CVariant(rate);
   runNativeOnUiThread(SetRefreshRateCallback, variant);
   m_displayChangeEvent.Wait(5000ms);
+}
+
+void CXBMCApp::SetVideoSurfaceFrameRate(float fps)
+{
+  // Signal the video content frame rate to the compositor via the main app
+  // window. Used by the plain MediaCodec (EGL) path, where video is rendered
+  // through the Kodi GLES framebuffer rather than a dedicated video surface.
+  // On Quest / Horizon OS this allows the compositor to select an optimal
+  // display refresh rate for the content (e.g. 72 Hz for 24 fps video).
+  if (CAndroidUtils::IsQuestDevice() && m_window)
+    m_window->SetFrameRate(fps);
 }
 
 void CXBMCApp::SetDisplayMode(int mode, float rate)
