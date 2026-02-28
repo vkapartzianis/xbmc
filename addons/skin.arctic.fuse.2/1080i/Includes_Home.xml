@@ -1,0 +1,618 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<includes>
+
+    <include name="Home_Menu_Content">
+        <definition>
+            <content>
+                <include>skinvariables-sidemenu-staticitems</include>
+            </content>
+        </definition>
+    </include>
+
+    <include name="Home_Menu_List_OnBackInfo">
+        <oninfo>ActivateWindow(1170)</oninfo>
+        <onback condition="!Skin.HasSetting(Home.DisableMenuOnBack)">CancelAlarm(SplashTimeOut,silent)</onback>
+        <onback condition="!Skin.HasSetting(Home.DisableMenuOnBack)">SetProperty(307Refocus,$INFO[System.CurrentControlID])</onback>
+        <onback condition="!Skin.HasSetting(Home.DisableMenuOnBack)">SetFocus(307)</onback>
+    </include>
+
+    <include name="Home_Menu_List_Vert">
+        <left>-view_menu_main</left>
+        <width>view_menu_main</width>
+    </include>
+
+
+    <include name="Home_Menu_List_Vert_Main">
+        <width>view_menu_main</width>
+        <include content="Object_Height" condition="[Skin.HasSetting(SideMenu.DisableProfileLogo) | Skin.HasSetting(SideMenu.DisableSearchAndOptions)]">
+            <param name="height">view_menu_extended_height</param>
+        </include>
+        <height>view_menu_height</height>
+        <centertop>50%</centertop>
+    </include>
+
+    <include name="Home_Menu_List_Reposition">
+        <animation effect="slide" start="0" end="0,40" condition="Integer.IsEqual(Container($PARAM[id]).NumItems,6)">Conditional</animation>
+        <animation effect="slide" start="0" end="0,80" condition="Integer.IsEqual(Container($PARAM[id]).NumItems,5)">Conditional</animation>
+        <animation effect="slide" start="0" end="0,120" condition="Integer.IsEqual(Container($PARAM[id]).NumItems,4)">Conditional</animation>
+        <animation effect="slide" start="0" end="0,160" condition="Integer.IsEqual(Container($PARAM[id]).NumItems,3)">Conditional</animation>
+        <animation effect="slide" start="0" end="0,200" condition="Integer.IsEqual(Container($PARAM[id]).NumItems,2)">Conditional</animation>
+        <animation effect="slide" start="0" end="0,240" condition="Integer.IsEqual(Container($PARAM[id]).NumItems,1)">Conditional</animation>
+    </include>
+    <include name="Home_Menu_List_Extended_Reposition">
+        <animation effect="slide" start="0" end="0,40" condition="Integer.IsEqual(Container($PARAM[id]).NumItems,8)">Conditional</animation>
+        <animation effect="slide" start="0" end="0,80" condition="Integer.IsEqual(Container($PARAM[id]).NumItems,7)">Conditional</animation>
+        <animation effect="slide" start="0" end="0,120" condition="Integer.IsEqual(Container($PARAM[id]).NumItems,6)">Conditional</animation>
+        <animation effect="slide" start="0" end="0,160" condition="Integer.IsEqual(Container($PARAM[id]).NumItems,5)">Conditional</animation>
+        <animation effect="slide" start="0" end="0,200" condition="Integer.IsEqual(Container($PARAM[id]).NumItems,4)">Conditional</animation>
+        <animation effect="slide" start="0" end="0,240" condition="Integer.IsEqual(Container($PARAM[id]).NumItems,3)">Conditional</animation>
+        <animation effect="slide" start="0" end="0,280" condition="Integer.IsEqual(Container($PARAM[id]).NumItems,2)">Conditional</animation>
+        <animation effect="slide" start="0" end="0,320" condition="Integer.IsEqual(Container($PARAM[id]).NumItems,1)">Conditional</animation>
+    </include>
+
+    <include name="Home_Menu_List">
+        <param name="items_include">Home_Menu_Content</param>
+        <param name="onlist">320</param>
+        <param name="id">300</param>
+        <definition>
+            <control type="group">
+
+                <include>Home_Menu_List_Vert</include>
+
+                <control type="list" id="$PARAM[id]">
+                    <!-- <focusposition>3</focusposition>
+                    <movement>3</movement> -->
+
+                    <include content="Home_Menu_List_Reposition" condition="!$EXP[Exp_HomeMenu_IsExpanded] + ![Skin.HasSetting(SideMenu.DisableProfileLogo) | Skin.HasSetting(SideMenu.DisableSearchAndOptions)]">
+                        <param name="id">$PARAM[id]</param>
+                    </include>
+                    <include content="Home_Menu_List_Extended_Reposition" condition="!$EXP[Exp_HomeMenu_IsExpanded] + [Skin.HasSetting(SideMenu.DisableProfileLogo) | Skin.HasSetting(SideMenu.DisableSearchAndOptions)]">
+                        <param name="id">$PARAM[id]</param>
+                    </include>
+
+                    <include>Home_Menu_List_Vert_Main</include>
+                    <include>Home_Menu_List_OnBackInfo</include>
+
+                    <onfocus condition="$EXP[Exp_HomeMenu_IsExpanded] + Skin.String(Home.MenuStyle,Ribbon)">SetProperty(Background.ShowOverlay,True,Home)</onfocus>
+                    <onfocus condition="![$EXP[Exp_HomeMenu_IsExpanded] + Skin.String(Home.MenuStyle,Ribbon)]">ClearProperty(Background.ShowOverlay,Home)</onfocus>
+
+                    <onfocus>ClearProperty(WidgetGroup.Movement)</onfocus>
+                    <onfocus>ClearProperty(SideMenu.CurrentItem)</onfocus>
+                    <onfocus>SetProperty(Focus.ControlID,$NUMBER[300],Home)</onfocus>
+
+                    <onfocus condition="$EXP[Exp_HomeHub_IsVisible] + !String.IsEmpty(Window(1198).Property(TMDbHelper.WidgetContainer.UpdateLock.OnFocus))">SetProperty(TMDbHelper.WidgetContainer.UpdateLock,$INFO[ListItem.CurrentItem],1198)</onfocus>
+                    <onfocus condition="$EXP[Exp_HomeHub_IsVisible] + String.IsEmpty(Window(1198).Property(TMDbHelper.WidgetContainer.UpdateLock.OnFocus))">SetProperty(TMDbHelper.WidgetContainer.UpdateLock.OnFocus,True,1198)</onfocus>
+
+                    <onfocus condition="!String.IsEmpty(Window.Property(List.ViewContainer.Prev))">SetProperty(List.ViewContainer,$INFO[Window.Property(List.ViewContainer.Prev)])</onfocus>
+                    <onfocus condition="!String.IsEmpty(Window.Property(List.ViewContainer.Prev))">ClearProperty(List.ViewContainer.Prev)</onfocus>
+
+                    <include content="Action_HomeMenu_OnRightLeft">
+                        <param name="onlist">$PARAM[onlist]</param>
+                        <param name="id">$PARAM[id]</param>
+                    </include>
+                    <include content="Object_Orientation">
+                        <param name="orientation">vertical</param>
+                    </include>
+
+                    <scrolltime tween="quadratic">400</scrolltime>
+
+                    <include content="Home_Menu_List_ItemLayout">
+                        <param name="id">$PARAM[id]</param>
+                        <param name="hidden_button">Home_Menu_List_HiddenButton</param>
+                        <param name="hidden_button_enabled">$EXP[Exp_HomeHub_IsVisible]</param>
+                        <param name="vertical">true</param>
+                        <param name="expanded">$EXP[Exp_HomeMenu_IsExpanded]</param>
+                    </include>
+                    <include>$PARAM[items_include]</include>
+                </control>
+            </control>
+        </definition>
+    </include>
+
+    <include name="Home_Menu_List_HiddenButton">
+        <control type="button">
+            <visible allowhiddenfocus="true">false</visible>
+            <animation effect="fade" start="0" end="0" time="50" reversible="false">Focus</animation>
+
+            <onfocus condition="$EXP[Exp_HomeHub_IsVisible] + !Integer.IsEqual(Window(1198).Property(TMDbHelper.WidgetContainer.UpdateLock),ListItem.CurrentItem)">SetProperty(TMDbHelper.WidgetContainer.UpdateLock,$INFO[ListItem.CurrentItem],1198)</onfocus>
+
+            <onfocus condition="$EXP[Exp_HomeHub_IsVisible] + !Integer.IsEqual(Window(1198).Property(TMDbHelper.WidgetContainer.UpdateLock),ListItem.CurrentItem)">SetFocus($INFO[ListItem.Property(widgets_first_id)])</onfocus>
+            <onfocus condition="$EXP[Exp_HomeHub_IsVisible] + !Integer.IsEqual(Window(1198).Property(TMDbHelper.WidgetContainer.UpdateLock),ListItem.CurrentItem)">SetFocus(300)</onfocus>
+
+            <onfocus condition="$EXP[Exp_HomeHub_IsVisible] + !Integer.IsEqual(Window(1198).Property(TMDbHelper.WidgetContainer.UpdateLock),ListItem.CurrentItem)">SetProperty(TMDbHelper.WidgetContainer,$INFO[ListItem.Property(widgets_first_id)],Home)</onfocus>
+            <onfocus condition="$EXP[Exp_HomeHub_IsVisible] + !Integer.IsEqual(Window(1198).Property(TMDbHelper.WidgetContainer.UpdateLock),ListItem.CurrentItem)">SetProperty(Slide.WidgetContainer,$INFO[ListItem.Property(widgets_first_id)],Home)</onfocus>
+            <onfocus condition="$EXP[Exp_HomeHub_IsVisible] + !Integer.IsEqual(Window(1198).Property(TMDbHelper.WidgetContainer.UpdateLock),ListItem.CurrentItem)">ClearProperty(List.ViewContainer,Home)</onfocus>
+            <onfocus condition="$EXP[Exp_HomeHub_IsVisible] + !Integer.IsEqual(Window(1198).Property(TMDbHelper.WidgetContainer.UpdateLock),ListItem.CurrentItem)">ClearProperty(List.ViewContainer.Prev,Home)</onfocus>
+            <onfocus condition="$EXP[Exp_HomeHub_IsVisible] + !Integer.IsEqual(Window(1198).Property(TMDbHelper.WidgetContainer.UpdateLock),ListItem.CurrentItem)">SetProperty(SideMenu.CurrentName,$INFO[ListItem.Label],Home)</onfocus>
+
+        </control>
+    </include>
+
+    <include name="Home_Menu_List_ItemLayout">
+        <param name="layoutnf">[false]</param>
+        <param name="layoutfo">[$EXP[Exp_HomeHub_IsVisible]]</param>
+        <param name="altfocus">false</param>
+        <param name="expanded">true</param>
+        <param name="width">view_menu_main</param>
+        <param name="centerright">100</param>
+        <definition>
+            <itemlayout height="view_menu_itemlayout_h" width="$PARAM[width]">
+
+                <control type="group">
+                    <height>35</height>
+                    <centertop>50%</centertop>
+                    <left>80</left>
+                    <right>200</right>
+                    <visible>$PARAM[expanded]</visible>
+                    <control type="label">
+                        <aligny>center</aligny>
+                        <font>font_main</font>
+                        <textcolor>$VAR[Layout_Home_Menu_Color_NF]</textcolor>
+                        <label>$INFO[ListItem.Label]</label>
+                    </control>
+                </control>
+
+                <control type="group">
+                    <width>80</width>
+                    <centerright>$PARAM[centerright]</centerright>
+                    <include content="Layout_Home_Menu">
+                        <param name="selected">false</param>
+                        <param name="detailed">Control.HasFocus($PARAM[id])</param>
+                        <param name="layoutfo">$PARAM[layoutnf]</param>
+                        <param name="vertical">$PARAM[vertical]</param>
+                        <param name="expanded">$PARAM[expanded]</param>
+                    </include>
+                </control>
+            </itemlayout>
+            <focusedlayout height="view_menu_itemlayout_h" width="$PARAM[width]">
+                <include condition="$PARAM[hidden_button_enabled]">$PARAM[hidden_button]</include>
+                <control type="group">
+                    <control type="image">
+                        <visible>Control.HasFocus($PARAM[id]) | $PARAM[altfocus]</visible>
+                        <include>Texture_Menu_Highlight_H</include>
+                        <height>80</height>
+                        <left>40</left>
+                        <right>40</right>
+                        <centertop>50%</centertop>
+                        <visible>$PARAM[expanded]</visible>
+                    </control>
+                </control>
+                <control type="group">
+                    <width>80</width>
+                    <centerright>$PARAM[centerright]</centerright>
+                    <control type="group">
+                        <visible>![Control.HasFocus($PARAM[id]) | $PARAM[altfocus]]</visible>
+                        <include content="Layout_Home_Menu">
+                            <param name="selected">false</param>
+                            <param name="detailed">[Control.HasFocus($PARAM[id]) | $PARAM[altfocus]]</param>
+                            <param name="layoutfo">$PARAM[layoutfo]</param>
+                            <param name="vertical">$PARAM[vertical]</param>
+                            <param name="expanded">$PARAM[expanded]</param>
+                        </include>
+                    </control>
+                    <control type="group">
+                        <visible>Control.HasFocus($PARAM[id]) | $PARAM[altfocus]</visible>
+                        <include content="Layout_Home_Menu">
+                            <param name="selected">true</param>
+                            <param name="detailed">[Control.HasFocus($PARAM[id]) | $PARAM[altfocus]]</param>
+                            <param name="layoutfo">$PARAM[layoutfo]</param>
+                            <param name="vertical">$PARAM[vertical]</param>
+                            <param name="expanded">$PARAM[expanded]</param>
+                        </include>
+                    </control>
+                </control>
+                <control type="group">
+                    <height>35</height>
+                    <centertop>50%</centertop>
+                    <left>80</left>
+                    <right>200</right>
+                    <visible>$PARAM[expanded]</visible>
+                    <control type="label">
+                        <aligny>center</aligny>
+                        <font>font_main</font>
+                        <textcolor>$VAR[Layout_Home_Menu_Color_NF]</textcolor>
+                        <label>$INFO[ListItem.Label]</label>
+                        <visible>![Control.HasFocus($PARAM[id]) | $PARAM[altfocus]]</visible>
+                    </control>
+                    <control type="label">
+                        <aligny>center</aligny>
+                        <font>font_main</font>
+                        <textcolor>$VAR[ColorSelected]</textcolor>
+                        <label>$INFO[ListItem.Label]</label>
+                        <visible>Control.HasFocus($PARAM[id]) | $PARAM[altfocus]</visible>
+                    </control>
+                </control>
+            </focusedlayout>
+        </definition>
+    </include>
+
+    <include name="Home_Menu_SearchButton">
+        <param name="onlist">320</param>
+        <param name="id">309</param>
+        <definition>
+            <control type="button" id="$PARAM[id]">
+                <texturenofocus />
+                <texturefocus />
+                <width>80</width>
+                <height>80</height>
+                <centerleft>50%</centerleft>
+                <centertop>50%</centertop>
+
+                <onfocus condition="$EXP[Exp_HomeMenu_IsExpanded] + Skin.String(Home.MenuStyle,Ribbon)">SetProperty(Background.ShowOverlay,True,Home)</onfocus>
+                <onfocus condition="![$EXP[Exp_HomeMenu_IsExpanded] + Skin.String(Home.MenuStyle,Ribbon)]">ClearProperty(Background.ShowOverlay,Home)</onfocus>
+
+                <onfocus>ClearProperty(TMDbHelper.WidgetContainer.UpdateLock.OnFocus,1198)</onfocus>
+
+                <include>Home_Menu_List_OnBackInfo</include>
+                <onclick>$VAR[Action_ActivateSearchDiscover]</onclick>
+
+                <include content="Action_HomeMenu_OnRightLeft">
+                    <param name="onlist">$PARAM[onlist]</param>
+                    <param name="id">$PARAM[id]</param>
+                    <param name="search">false</param>
+                    <param name="option">false</param>
+                </include>
+                <onup>308</onup>
+                <ondown>SetFocus(300,0,absolute)</ondown>
+            </control>
+
+            <control type="image">
+                <texture colordiffuse="$VAR[Layout_Home_Menu_Color_NF]">$VAR[Image_SearchDiscover]</texture>
+                <bordersize>icon_home_bordersize</bordersize>
+                <visible>![Control.HasFocus($PARAM[id]) + !Window.IsVisible(1163)]</visible>
+            </control>
+            <control type="image">
+                <texture colordiffuse="$VAR[ColorSelected]">$VAR[Image_SearchDiscover]</texture>
+                <bordersize>icon_home_bordersize</bordersize>
+                <visible>Control.HasFocus($PARAM[id]) + !Window.IsVisible(1163)</visible>
+            </control>
+        </definition>
+    </include>
+
+    <include name="Home_Menu_OptionButton">
+        <param name="onlist">320</param>
+        <param name="id">308</param>
+        <definition>
+            <control type="button" id="$PARAM[id]">
+                <texturenofocus />
+                <texturefocus />
+                <width>80</width>
+                <height>80</height>
+                <centerleft>50%</centerleft>
+                <centertop>50%</centertop>
+                <onclick>ActivateWindow(1170)</onclick>
+
+                <onfocus condition="$EXP[Exp_HomeMenu_IsExpanded] + Skin.String(Home.MenuStyle,Ribbon)">SetProperty(Background.ShowOverlay,True,Home)</onfocus>
+                <onfocus condition="![$EXP[Exp_HomeMenu_IsExpanded] + Skin.String(Home.MenuStyle,Ribbon)]">ClearProperty(Background.ShowOverlay,Home)</onfocus>
+
+                <onfocus>ClearProperty(TMDbHelper.WidgetContainer.UpdateLock.OnFocus,1198)</onfocus>
+
+                <include>Home_Menu_List_OnBackInfo</include>
+                <include content="Action_HomeMenu_OnRightLeft">
+                    <param name="onlist">$PARAM[onlist]</param>
+                    <param name="id">$PARAM[id]</param>
+                    <param name="search">false</param>
+                    <param name="option">false</param>
+                </include>
+
+                <ondown>309</ondown>
+                <onup>SetFocus(300,9999,absolute)</onup>
+
+            </control>
+            <control type="image">
+                <texture colordiffuse="$VAR[Layout_Home_Menu_Color_NF]">special://skin/extras/icons/bars.png</texture>
+                <bordersize>icon_home_bordersize</bordersize>
+                <visible>![Control.HasFocus($PARAM[id]) + !Window.IsVisible(1163)]</visible>
+            </control>
+            <control type="image">
+                <texture colordiffuse="$VAR[ColorSelected]">special://skin/extras/icons/bars.png</texture>
+                <bordersize>icon_home_bordersize</bordersize>
+                <visible>Control.HasFocus($PARAM[id]) + !Window.IsVisible(1163)</visible>
+            </control>
+        </definition>
+    </include>
+
+    <include name="Home_Menu_Vert_Search">
+        <control type="group">
+            <include content="Object_CenterTop" condition="Skin.HasSetting(SideMenu.DisableProfileLogo)">
+                <param name="centertop">100</param>
+            </include>
+            <centertop>220</centertop>
+            <height>40</height>
+            <control type="group">
+                <visible>Control.HasFocus(309)</visible>
+                <visible>!Window.IsVisible(1163)</visible>
+                <control type="image">
+                    <include>Texture_Menu_Highlight_H</include>
+                    <height>80</height>
+                    <left>40</left>
+                    <right>40</right>
+                    <centertop>50%</centertop>
+                    <visible>$EXP[Exp_HomeMenu_IsExpanded]</visible>
+                </control>
+                <control type="image">
+                    <include>Texture_CircleButtonDialog_Highlight_V</include>
+                    <aspectratio>keep</aspectratio>
+                    <height>160</height>
+                    <width>160</width>
+                    <centertop>50%</centertop>
+                    <centerright>100</centerright>
+                    <visible>![$EXP[Exp_HomeMenu_IsExpanded]]</visible>
+                </control>
+            </control>
+            <control type="group">
+                <width>40</width>
+                <centerright>100</centerright>
+                <include>Home_Menu_SearchButton</include>
+            </control>
+            <control type="group">
+                <include content="Layout_Home_Menu_Label" condition="$EXP[Exp_HomeMenu_IsExpanded]">
+                    <param name="detailed">true</param>
+                    <param name="selected">[Control.HasFocus(309) + !Window.IsVisible(1163)]</param>
+                    <param name="label">$LOCALIZE[137]</param>
+                </include>
+            </control>
+        </control>
+    </include>
+
+    <include name="Home_Menu_Vert_Option">
+        <control type="group">
+            <include content="Object_CenterBottom" condition="Skin.HasSetting(SideMenu.DisableProfileLogo)">
+                <param name="centerbottom">100</param>
+            </include>
+            <centerbottom>220</centerbottom>
+            <height>40</height>
+            <control type="group">
+                <visible>Control.HasFocus(308)</visible>
+                <visible>!Window.IsVisible(1163)</visible>
+                <control type="image">
+                    <include>Texture_Menu_Highlight_H</include>
+                    <height>80</height>
+                    <left>40</left>
+                    <right>40</right>
+                    <centertop>50%</centertop>
+                    <visible>$EXP[Exp_HomeMenu_IsExpanded]</visible>
+                </control>
+                <control type="image">
+                    <include>Texture_CircleButtonDialog_Highlight_V</include>
+                    <aspectratio>keep</aspectratio>
+                    <height>160</height>
+                    <width>160</width>
+                    <centertop>50%</centertop>
+                    <centerright>100</centerright>
+                    <visible>![$EXP[Exp_HomeMenu_IsExpanded]]</visible>
+                </control>
+            </control>
+            <control type="group">
+                <width>40</width>
+                <centerright>100</centerright>
+                <include>Home_Menu_OptionButton</include>
+            </control>
+            <control type="group">
+                <include content="Layout_Home_Menu_Label" condition="$EXP[Exp_HomeMenu_IsExpanded]">
+                    <param name="detailed">true</param>
+                    <param name="selected">[Control.HasFocus(308) + !Window.IsVisible(1163)]</param>
+                    <param name="label">$LOCALIZE[33063]</param>
+                </include>
+            </control>
+        </control>
+    </include>
+
+    <include name="Home_Menu_Vert_Header">
+        <param name="include_label">$EXP[Exp_HomeMenu_IsExpanded]</param>
+        <param name="label">$LOCALIZE[10000]</param>
+        <definition>
+            <control type="group">
+                <include>Dimension_Topbar</include>
+                <control type="group">
+                    <left>view_menu_main_head_x</left>
+                    <include>Dimension_Furniture_Gutters</include>
+
+                    <control type="group">
+                        <include content="Furniture_MainLabel" condition="$PARAM[include_label]">
+                            <param name="label">$PARAM[label]</param>
+                            <param name="textcolor">dialog_fg_100</param>
+                        </include>
+                    </control>
+
+                    <control type="group">
+                        <centerright>20</centerright>
+                        <centertop>50%</centertop>
+                        <height>50</height>
+                        <width>50</width>
+                        <control type="image">
+                            <include content="Dimension_Padding">
+                                <param name="pad">-40</param>
+                            </include>
+                            <bordersize>40</bordersize>
+                            <bordertexture colordiffuse="shadow_soft">shadows/circle_50-shadow-40.png</bordertexture>
+                            <texture colordiffuse="dialog_fg_100">diffuse/circle/circle_50.png</texture>
+                        </control>
+                        <include content="Object_InfoCircle_Image">
+                            <param name="bordersize">2</param>
+                            <param name="aspectratio">scale</param>
+                            <param name="colordiffuse">white</param>
+                            <param name="icon">$VAR[Image_ProfileThumb]</param>
+                        </include>
+                    </control>
+
+                </control>
+            </control>
+        </definition>
+    </include>
+    <include name="Home_Menu_Vert_Bottom">
+        <param name="include_label">$EXP[Exp_HomeMenu_IsExpanded]</param>
+        <param name="label">$VAR[Label_ProfileName]</param>
+        <definition>
+            <control type="group">
+                <include>Dimension_Bottombar</include>
+                <control type="group">
+                    <left>view_menu_main_head_x</left>
+                    <animation effect="fade" start="100" end="70" condition="true">Conditional</animation>
+                    <include>Dimension_Furniture_Gutters</include>
+                    <control type="group">
+                        <include content="View_Furniture_Bottom_ViewLine" condition="$PARAM[include_label]">
+                            <param name="label">$PARAM[label]</param>
+                            <param name="fade_condition">false</param>
+                            <param name="textcolor">dialog_fg_90</param>
+                        </include>
+                    </control>
+                    <control type="group">
+                        <centertop>50%</centertop>
+                        <centerright>20</centerright>
+                        <width>40</width>
+                        <height>40</height>
+                        <control type="image">
+                            <texture colordiffuse="$VAR[ColorHighlight]">special://skin/extras/icons/kodi.png</texture>
+                            <aspectratio>keep</aspectratio>
+                            <bordersize>-16</bordersize>
+                        </control>
+                        <control type="image">
+                            <texture colordiffuse="$VAR[ColorGradient]">special://skin/extras/icons/kodi.png</texture>
+                            <aspectratio>keep</aspectratio>
+                            <bordersize>-16</bordersize>
+                            <animation effect="fade" end="33" condition="true">Conditional</animation>
+                        </control>
+                    </control>
+                </control>
+            </control>
+        </definition>
+    </include>
+
+    <include name="Home_Menu_Vert_SearchAndOptions">
+        <control type="group">
+            <width>view_menu_main</width>
+            <left>-view_menu_main</left>
+            <include condition="!Skin.HasSetting(SideMenu.DisableProfileLogo) | [Skin.HasSetting(SideMenu.DisableSearchAndOptions) + $EXP[Exp_HomeMenu_IsExpanded]]">Home_Menu_Vert_Header</include>
+            <include condition="!Skin.HasSetting(SideMenu.DisableSearchAndOptions)">Home_Menu_Vert_Search</include>
+            <include condition="!Skin.HasSetting(SideMenu.DisableSearchAndOptions)">Home_Menu_Vert_Option</include>
+            <include condition="!Skin.HasSetting(SideMenu.DisableProfileLogo) | [Skin.HasSetting(SideMenu.DisableSearchAndOptions) + $EXP[Exp_HomeMenu_IsExpanded]]">Home_Menu_Vert_Bottom</include>
+        </control>
+    </include>
+
+    <include name="Home_Menu_Vert_Background">
+        <param name="subline_visible">true</param>
+        <param name="dialog_size">Dimension_DialogMaxiHome</param>
+        <param name="include_ribbon">false</param>
+        <param name="include_dialog">true</param>
+        <param name="include_mask">true</param>
+        <definition>
+            <control type="group">
+                <left>$PARAM[left]</left>
+                <width>$PARAM[width]</width>
+                <control type="group">
+                    <left>-20</left>
+                    <right>-20</right>
+                    <include content="Object_Control" condition="$PARAM[include_mask]">
+                        <param name="control">image</param>
+                        <left>-1920</left>
+                        <texture colordiffuse="$VAR[ColorBackground]">common/white.png</texture>
+                    </include>
+                    <include content="Object_Control" condition="$PARAM[include_ribbon]">
+                        <param name="control">image</param>
+                        <left>-1920</left>
+                        <texture colordiffuse="dialog_bg_30">common/white.png</texture>
+                    </include>
+                    <include content="Object_Control" condition="$PARAM[include_ribbon]">
+                        <param name="control">image</param>
+                        <right>0</right>
+                        <width>1</width>
+                        <texture colordiffuse="$VAR[Color_DialogBorder]">common/white.png</texture>
+                    </include>
+                    <include content="Dialog_Background_Group" condition="$PARAM[include_dialog]">
+                        <param name="include_glass">true</param>
+                        <param name="dialog_size">$PARAM[dialog_size]</param>
+                    </include>
+                </control>
+                <control type="group">
+                    <top>40</top>
+                    <bottom>40</bottom>
+                    <right>20</right>
+                    <left>20</left>
+
+                    <visible>$PARAM[include_dialog]</visible>
+
+                    <control type="image">
+                        <top>120</top>
+                        <left>40</left>
+                        <right>40</right>
+                        <height>1</height>
+                        <texture colordiffuse="$VAR[Color_DialogBorder]">common/white.png</texture>
+                    </control>
+
+                    <control type="image">
+                        <bottom>120</bottom>
+                        <left>40</left>
+                        <right>40</right>
+                        <height>1</height>
+                        <texture colordiffuse="$VAR[Color_DialogBorder]">common/white.png</texture>
+                        <visible>$PARAM[subline_visible]</visible>
+                    </control>
+                </control>
+            </control>
+        </definition>
+    </include>
+
+    <include name="Home_Menu_Vert_Large">
+        <left>view_menu_main_pad_x</left>
+        <control type="group">
+            <left>view_menu_main_offset_x</left>
+            <include content="Home_Menu_Vert_Background">
+                <param name="left">-view_menu_main</param>
+                <param name="width">view_menu_main</param>
+                <param name="include_ribbon">Skin.String(Home.MenuStyle,Ribbon)</param>
+                <param name="include_dialog">!Skin.String(Home.MenuStyle,Ribbon)</param>
+                <param name="include_mask">!Skin.String(Home.MenuStyle,Ribbon)</param>
+            </include>
+        </control>
+    </include>
+
+    <include name="Home_Menu_Vert_Small">
+        <left>view_menu_mini_pad_x</left>
+        <control type="group">
+            <left>view_menu_mini_offset_x</left>
+            <include content="Home_Menu_Vert_Background">
+                <param name="left">-view_menu_mini</param>
+                <param name="width">view_menu_mini</param>
+                <param name="dialog_size">Dimension_DialogMiniHome</param>
+                <param name="include_ribbon">Skin.String(Home.MenuStyle,Ribbon)</param>
+                <param name="include_dialog">Skin.String(Home.MenuStyle,Dialog)</param>
+                <param name="include_mask">!Skin.String(Home.MenuStyle,Ribbon)</param>
+            </include>
+        </control>
+    </include>
+
+    <include name="Home_Menu_Vert">
+        <control type="group">
+
+
+            <include condition="Window.IsVisible(Home) + !$EXP[Exp_HomeMenu_IsExpanded]">Home_Menu_Vert_Small</include>
+            <include condition="![Window.IsVisible(Home) + !$EXP[Exp_HomeMenu_IsExpanded]]">Home_Menu_Vert_Large</include>
+
+            <visible allowhiddenfocus="true">$EXP[Exp_HomeMenu_HasFocus]</visible>
+            <include>Animation_Home_Menu_Fade</include>
+
+            <control type="group">
+                <include>Hub_Menu_Fade</include>
+                <include>Home_Menu_Vert_SearchAndOptions</include>
+                <include content="Home_Menu_List">
+                    <param name="onlist">$PARAM[onlist]</param>
+                    <param name="window_id">$PARAM[window_id]</param>
+                    <param name="property_window_id">$PARAM[property_window_id]</param>
+                </include>
+            </control>
+        </control>
+    </include>
+
+    <include name="Home_Menu">
+        <control type="group">
+            <include>Animation_Group_Bumper_Right</include>
+            <include content="Home_Menu_Vert">
+                <param name="onlist">$PARAM[onlist]</param>
+                <param name="window_id">$PARAM[window_id]</param>
+                <param name="property_window_id">$PARAM[property_window_id]</param>
+            </include>
+        </control>
+    </include>
+
+</includes>

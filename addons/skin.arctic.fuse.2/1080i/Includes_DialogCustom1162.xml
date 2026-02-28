@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<includes>
+
+    <variable name="DialogCustom1162_OnClick">
+        <value condition="!String.IsEmpty(ListItem.Property(target)) + !String.IsEmpty(ListItem.Property(path))">ActivateWindow($INFO[ListItem.Property(target)],$INFO[ListItem.Property(path)],return)</value>
+        <value condition="!String.IsEmpty(ListItem.Property(path))">$INFO[ListItem.Property(path)]</value>
+        <value condition="String.StartsWith(ListItem.FolderPath,favourites://)">RunScript(script.skinvariables,run_executebuiltin=special://skin/shortcuts/builtins/skinvariables-openfavourite.json,use_rules,folderpath=$INFO[ListItem.FolderPath])</value>
+        <value condition="ListItem.IsFolder">ActivateWindow($INFO[Window.Property(Target)],$INFO[ListItem.FolderPath],return)</value>
+        <value>PlayMedia($INFO[ListItem.FolderPath])</value>
+    </variable>
+
+    <include name="DialogCustom1162_Plotbox">
+        <param name="landscape_icon">$VAR[Image_Landscape_C450]</param>
+        <param name="textbox_label">$VAR[Label_Plot_C450]</param>
+        <definition>
+            <!-- <include content="Dialog_Outline_InnerBox"> -->
+            <control type="group">
+                <width>800</width>
+                <left>-20</left>
+                <top>-20</top>
+                <bottom>-20</bottom>
+                <include content="Object_Control">
+                    <param name="control">image</param>
+                    <top>0</top>
+                    <height>1</height>
+                    <left>40</left>
+                    <right>40</right>
+                    <texture colordiffuse="$VAR[Color_DialogBorder]">common/white.png</texture>
+                </include>
+                <include content="Object_Control">
+                    <param name="control">image</param>
+                    <bottom>0</bottom>
+                    <height>1</height>
+                    <left>40</left>
+                    <right>40</right>
+                    <texture colordiffuse="$VAR[Color_DialogBorder]">common/white.png</texture>
+                </include>
+                <control type="grouplist">
+                    <orientation>vertical</orientation>
+                    <itemgap>40</itemgap>
+                    <control type="group">
+                        <height>0</height>
+                    </control>
+                    <control type="group">
+                        <left>40</left>
+                        <right>40</right>
+                        <height>405</height>
+                        <include content="Dialog_Outline_InnerBox">
+                            <control type="image">
+                                <aspectratio scalediffuse="false">scale</aspectratio>
+                                <texture background="true" diffuse="diffuse/landscape_w720_h405.png">$PARAM[landscape_icon]</texture>
+                            </control>
+                        </include>
+                    </control>
+                    <control type="textbox">
+                        <left>40</left>
+                        <right>40</right>
+                        <height max="320">auto</height>
+                        <font>font_main_plot</font>
+                        <textcolor>dialog_fg_70</textcolor>
+                        <label>$PARAM[textbox_label]</label>
+                    </control>
+                </control>
+            </control>
+        </definition>
+    </include>
+
+    <include name="DialogCustom1162_Main">
+        <param name="dialog_size">Dimension_DialogHugeMenu</param>
+        <param name="include_artwork">true</param>
+        <param name="include_plotbox">false</param>
+        <definition>
+            <include content="Dialog_Dim_Overlay">
+                <param name="visible">![Container(450).IsUpdating | Integer.IsEqual(Container(450).NumItems,0)]</param>
+            </include>
+            <control type="group">
+                <include>$PARAM[dialog_size]</include>
+                <include>Animation_Right_Delay</include>
+                <include content="Animation_Slide_In">
+                    <param name="type">Conditional</param>
+                    <param name="delay">400</param>
+                    <param name="posx">320</param>
+                    <param name="condition">![Container(450).IsUpdating | Integer.IsEqual(Container(450).NumItems,0)]</param>
+                </include>
+                <include content="Animation_Slide_Out">
+                    <param name="type">Conditional</param>
+                    <param name="posx">320</param>
+                    <param name="condition">[Container(450).IsUpdating | Integer.IsEqual(Container(450).NumItems,0)]</param>
+                </include>
+                <include content="Dialog_Foreground_Side">
+                    <param name="dialog_size">$PARAM[dialog_size]</param>
+                    <param name="topline">![$PARAM[include_artwork] | $PARAM[include_plotbox]]</param>
+                    <param name="subline">![$PARAM[include_artwork] | $PARAM[include_plotbox]]</param>
+                </include>
+
+                <!-- Header -->
+                <include content="Dialog_Head">
+                    <param name="label">$INFO[Window.Property(Header)]</param>
+                </include>
+                <include>Dialog_Head_CloseButton</include>
+
+                <!-- Content -->
+                <control type="group">
+                    <include>Dimension_Dialog_Body</include>
+                    <control type="group">
+                        <include>Dimension_Dialog_Body_Group</include>
+                        <include content="DialogInfo_PlotBox_Artwork" condition="$PARAM[include_artwork] + ![$PARAM[include_plotbox]]">
+                            <param name="poster_icon">$VAR[Image_PlotBoxPoster_C450]</param>
+                            <param name="square_icon">$INFO[Container(450).ListItem.Art(icon)]</param>
+                            <param name="landscape_icon">$VAR[Image_Landscape_C450]</param>
+                            <param name="clearlogo_icon">$VAR[Image_Clearlogo_C450]</param>
+                        </include>
+                        <include condition="$PARAM[include_artwork] + $PARAM[include_plotbox]">DialogCustom1162_Plotbox</include>
+                        <control type="group">
+
+                            <include content="Object_Left" condition="$PARAM[include_artwork] + $PARAM[include_plotbox]">
+                                <param name="left">780</param>
+                            </include>
+                            <include content="Object_Left" condition="![$PARAM[include_artwork]] + ![$PARAM[include_plotbox]]">
+                                <param name="left">0</param>
+                            </include>
+                            <left>420</left>
+                            <top>-20</top>
+                            <bottom>-20</bottom>
+                            <right>20</right>
+
+                            <include condition="$PARAM[include_artwork] | $PARAM[include_plotbox]">Dialog_Outline_InnerBox</include>
+
+                            <include content="List_DialogSelect" condition="![$PARAM[include_artwork]]">
+                                <param name="id">450</param>
+                                <param name="textcolor">dialog_fg</param>
+                                <param name="itemlayout_include">Layout_MenuList</param>
+                                <pagecontrol>61</pagecontrol>
+
+                                <onright>61</onright>
+                                <onleft>Close</onleft>
+                                <onclick>Close</onclick>
+
+                                <right>-10</right>
+                                <left>10</left>
+                                <include content="Dimension_Padding">
+                                    <param name="pad">20</param>
+                                </include>
+
+                                <onclick>$VAR[DialogCustom1162_OnClick]</onclick>
+
+                                <content>$INFO[Window.Property(Path)]</content>
+
+                            </include>
+
+                            <include content="List_DialogSelect" condition="$PARAM[include_artwork]">
+                                <param name="id">450</param>
+                                <param name="item_height">100</param>
+                                <param name="textcolor">dialog_fg</param>
+                                <param name="itemlayout_include">Layout_MediaList</param>
+                                <param name="misc">10</param>
+                                <param name="control">fixedlist</param>
+                                <focusposition>1</focusposition>
+                                <movement>6</movement>
+
+                                <right>-10</right>
+                                <left>10</left>
+                                <include content="Dimension_Padding">
+                                    <param name="pad">20</param>
+                                </include>
+
+                                <pagecontrol>61</pagecontrol>
+
+                                <onright>61</onright>
+                                <onleft>Close</onleft>
+                                <onclick>Close</onclick>
+
+                                <onclick>$VAR[DialogCustom1162_OnClick]</onclick>
+                                <content>$INFO[Window.Property(Path)]</content>
+
+                            </include>
+
+
+                        </control>
+                    </control>
+
+                    <include content="Dialog_Scrollbar">
+                        <param name="id">61</param>
+                        <param name="inset">[$PARAM[include_artwork] | $PARAM[include_plotbox]]</param>
+                        <onleft>450</onleft>
+                        <right>0</right>
+                    </include>
+
+                </control>
+            </control>
+        </definition>
+    </include>
+
+</includes>

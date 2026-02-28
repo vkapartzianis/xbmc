@@ -1,0 +1,16 @@
+<contents>
+    <lists>
+        <list name="sidemenu">
+            <value name="window_id">Home</value>
+            <value name="property_window_id">Home</value>
+        </list>
+    </lists>
+    <items>
+        <item>
+            <datafile>generator/data/base/home_widgets.xml</datafile>
+        </item>
+        <item>
+            <datafile>generator/data/base/home_listcheck.xml</datafile>
+        </item>
+    </items>
+</contents>

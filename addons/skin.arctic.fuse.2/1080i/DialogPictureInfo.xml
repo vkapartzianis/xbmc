@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<window type="dialog">
+
+    <defaultcontrol always="true">61</defaultcontrol>
+
+    <controls>
+        <include>Dialog_Dim_Overlay</include>
+
+        <control type="group">
+            <include>Dimension_DialogHugeMenu</include>
+            <include>Animation_Right_Delay</include>
+
+            <include content="Dialog_Foreground_Side">
+                <param name="dialog_size">Dimension_DialogHugeMenu</param>
+                <param name="topline">false</param>
+                <param name="subline">false</param>
+            </include>
+
+            <!-- Header -->
+            <include content="Dialog_Head">
+                <param name="label">$INFO[ListItem.Label]</param>
+            </include>
+            <include>Dialog_Head_CloseButton</include>
+
+            <!-- Content -->
+            <control type="group">
+                <include>Dimension_Dialog_Body</include>
+                <control type="group">
+                    <width>800</width>
+                    <left>40</left>
+                    <include content="Dialog_Outline_InnerBox">
+                        <control type="image">
+                            <aspectratio scalediffuse="false">keep</aspectratio>
+                            <texture background="true" diffuse="diffuse/square_w600_h600.png">$INFO[ListItem.Icon]</texture>
+                        </control>
+                    </include>
+                </control>
+                <control type="group">
+                    <left>800</left>
+                    <control type="panel" id="5">
+                        <left>80</left>
+                        <right>40</right>
+                        <top>30</top>
+                        <pagecontrol>61</pagecontrol>
+                        <onright>61</onright>
+                        <onleft>Close</onleft>
+                        <orientation>vertical</orientation>
+                        <itemlayout height="100">
+                            <include>Layout_BasicMeta</include>
+                        </itemlayout>
+                        <focusedlayout height="100">
+                            <include>Layout_BasicMeta</include>
+                        </focusedlayout>
+                    </control>
+                </control>
+
+            </control>
+
+
+            <control type="group">
+                <include>Dimension_Dialog_Body</include>
+                <include content="Dialog_Scrollbar">
+                    <param name="inset">true</param>
+                    <onleft>5</onleft>
+                </include>
+            </control>
+
+        </control>
+    </controls>
+</window>

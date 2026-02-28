@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<includes>
+
+    <variable name="Dialog_ContextMenu_SideButtons_WikiTitle">
+        <value condition="!String.IsEmpty(Window(Home).Property(TMDbHelper.ListItem.base_tvshowtitle))">$ESCINFO[Window(Home).Property(TMDbHelper.ListItem.base_tvshowtitle)]</value>
+        <value condition="!String.IsEmpty(Window(Home).Property(TMDbHelper.ListItem.base_title))">$ESCINFO[Window(Home).Property(TMDbHelper.ListItem.base_title)]</value>
+        <value condition="!String.IsEmpty(Window(Home).Property(TMDbHelper.ListItem.base_label))">$ESCINFO[Window(Home).Property(TMDbHelper.ListItem.base_label)]</value>
+    </variable>
+
+    <variable name="Dialog_ContextMenu_SideButtons_WikiType">
+        <value condition="String.IsEqual(Window(Home).Property(TMDbHelper.ListItem.base_dbtype),tvshow) | String.IsEqual(Window(Home).Property(TMDbHelper.ListItem.base_dbtype),season) | String.IsEqual(Window(Home).Property(TMDbHelper.ListItem.base_dbtype),episode)"> tv series</value>
+        <value condition="String.IsEqual(Window(Home).Property(TMDbHelper.ListItem.base_dbtype),movie)"> film</value>
+    </variable>
+
+
+
+    <include name="Dialog_ContextMenu_BodyContent">
+        <definition>
+            <control type="group">
+                <include>Dimension_Dialog_Body</include>
+
+                <control type="group">
+                    <include>Dimension_Dialog_Body_Group</include>
+
+
+                    <include content="Object_Control" condition="!String.IsEmpty(Window(Home).Property(TMDbHelper.ListItem.base_fanart))">
+                        <param name="control">group</param>
+
+                        <include content="Dialog_Outline_Box">
+                            <height>120</height>
+                            <control type="image">
+                                <texture diffuse="diffuse/banner_w560_h100.png" colordiffuse="main_logo" background="true">$VAR[Image_ContextFanart]</texture>
+                                <aspectratio scalediffuse="false">scale</aspectratio>
+                            </control>
+                            <control type="group">
+                                <include content="Dimension_Padding">
+                                    <param name="pad">20</param>
+                                </include>
+                                <control type="image">
+                                    <texture background="true">$VAR[Image_ContextClearlogo]</texture>
+                                    <aspectratio>keep</aspectratio>
+                                    <left>20</left>
+                                    <right>20</right>
+                                </control>
+                            </control>
+                        </include>
+                    </include>
+
+                    <control type="group">
+
+                        <include content="Object_Top" condition="!String.IsEmpty(Window(Home).Property(TMDbHelper.ListItem.base_fanart))">
+                            <param name="top">160</param>
+                        </include>
+
+                        <control type="image">
+                            <top>-20</top>
+                            <left>20</left>
+                            <right>20</right>
+                            <height>1</height>
+                            <texture colordiffuse="$VAR[Color_DialogBorder]">common/white.png</texture>
+                        </control>
+
+                        <control type="grouplist" id="996">
+                            <pagecontrol>61</pagecontrol>
+                            <onright>61</onright>
+                        </control>
+
+                        <control type="group">
+                            <right>-20</right>
+                            <top>-20</top>
+                            <bottom>-20</bottom>
+                            <include content="Dialog_Scrollbar">
+                                <param name="id">61</param>
+                                <onleft>996</onleft>
+                                <onright>9898</onright>
+                            </include>
+                        </control>
+
+                    </control>
+                </control>
+            </control>
+        </definition>
+    </include>
+
+    <include name="Dialog_Dim_Overlay">
+        <param name="visible">true</param>
+        <definition>
+            <control type="image">
+                <visible>$PARAM[visible]</visible>
+                <include>Animation_FadeIn</include>
+                <include>Animation_FadeOut</include>
+                <texture colordiffuse="shadow_back">common/white.png</texture>
+            </control>
+        </definition>
+    </include>
+
+    <include name="Dialog_ContextMenu">
+        <param name="dialog_size">Dimension_DialogMiniMenu</param>
+        <param name="header">$VAR[Label_ContextMenu]</param>
+        <param name="button_width">dialog_main_button_w</param>
+        <definition>
+            <include>Defs_Background_Loader</include>
+            <include>Dialog_Dim_Overlay</include>
+
+
+            <control type="group">
+                <include>$PARAM[dialog_size]</include>
+                <include>Animation_Right_Delay</include>
+                <include content="Dialog_Foreground_Side">
+                    <param name="dialog_size">$PARAM[dialog_size]</param>
+                </include>
+
+                <control type="group">
+                    <!-- Header -->
+                    <include content="Dialog_Head">
+                        <param name="label">$PARAM[header]</param>
+                    </include>
+
+                    <include>Dialog_Manage_Head_Button</include>
+
+                    <!-- Content -->
+                    <include>Dialog_ContextMenu_BodyContent</include>
+
+                </control>
+
+            </control>
+
+            <include content="Dialog_Manage">
+                <param name="onback">996</param>
+                <param name="include">Items_DialogContextMenu</param>
+            </include>
+
+            <include content="Settings_Button">
+                <param name="id">1000</param>
+                <param name="control">button</param>
+                <param name="dialog">true</param>
+                <width>$PARAM[button_width]</width>
+            </include>
+
+        </definition>
+    </include>
+
+</includes>

@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<window type="window">
+
+    <defaultcontrol>7000</defaultcontrol>
+    <controls>
+        <include>Dialog_Dim_Overlay</include>
+        <control type="group">
+            <include>Animation_SlideIn_Dialog</include>
+            <control type="group">
+                <include>Dimension_DialogManageConfirm</include>
+                <include content="Dialog_Background_Group">
+                    <param name="include_glass">true</param>
+                    <param name="dialog_size">Dimension_DialogManageConfirm</param>
+                </include>
+                <include>Dialog_Overlay_Tray</include>
+                <control type="group">
+                    <include>Dialog_Group</include>
+                    <include content="Dialog_Head">
+                        <param name="top">40</param>
+                        <param name="left">40</param>
+                        <param name="label">$LOCALIZE[21422]</param>
+                    </include>
+                    <control type="group">
+                        <control type="image">
+                            <top>120</top>
+                            <height>1</height>
+                            <texture colordiffuse="$VAR[Color_DialogBorder]">common/white.png</texture>
+                            <left>40</left>
+                            <right>40</right>
+                        </control>
+                        <control type="group">
+                            <include content="Dialog_Group">
+                                <param name="top">140</param>
+                                <param name="bottom">140</param>
+                                <param name="left">20</param>
+                                <param name="right">20</param>
+                            </include>
+                            <control type="grouplist" id="7000">
+                                <onup>noop</onup>
+                                <ondown condition="Control.IsEnabled(20)">20</ondown>
+                                <ondown condition="!Control.IsEnabled(20)">17</ondown>
+                                <include content="Settings_Button">
+                                    <param name="id">15</param>
+                                    <param name="control">button</param>
+                                </include>
+                                <include content="Settings_Button">
+                                    <param name="id">16</param>
+                                    <param name="control">button</param>
+                                </include>
+                            </control>
+
+                            <control type="group">
+                                <height>80</height>
+                                <top>160</top>
+                                <control type="image">
+                                    <include>Texture_Menu_Highlight_H</include>
+                                    <visible>Control.HasFocus(20)</visible>
+                                </control>
+                                <include content="Settings_Button">
+                                    <param name="id">17</param>
+                                    <param name="control">edit</param>
+                                    <onup>16</onup>
+                                    <onright>20</onright>
+                                    <ondown>9000</ondown>
+                                    <textwidth>320</textwidth>
+                                </include>
+                                <control type="grouplist" id="9001">
+                                    <right>20</right>
+                                    <orientation>horizontal</orientation>
+                                    <align>right</align>
+                                    <usecontrolcoords>true</usecontrolcoords>
+                                    <onleft>17</onleft>
+                                    <onright>9898</onright>
+                                    <ondown>9000</ondown>
+                                    <onup>16</onup>
+                                    <include content="Settings_EditButton">
+                                        <param name="id">17</param>
+                                        <param name="groupid">9017</param>
+                                        <param name="icon">special://skin/extras/icons/pencil.png</param>
+                                        <param name="hasfocus">[ControlGroup(9001).HasFocus() | Control.HasFocus(17)]</param>
+                                        <param name="hasbutton">false</param>
+                                    </include>
+
+                                    <include content="Settings_EditButton">
+                                        <param name="id">20</param>
+                                        <param name="groupid">9020</param>
+                                        <param name="icon">special://skin/extras/icons/search.png</param>
+                                        <param name="hasfocus">[ControlGroup(9001).HasFocus() | Control.HasFocus(17)]</param>
+                                    </include>
+
+                                </control>
+                            </control>
+                        </control>
+                    </control>
+                </control>
+                <!-- Buttons -->
+                <include content="Dialog_Tray_Grouplist">
+                    <param name="onup">noop</param>
+                    <onup>20</onup>
+                    <include content="Dialog_Button_Expanded">
+                        <param name="id">18</param>
+                        <param name="builtin">true</param>
+                        <param name="icon">special://skin/extras/icons/circle-check.png</param>
+                        <param name="label">$LOCALIZE[186]</param>
+                    </include>
+                    <include content="Dialog_Button_Expanded">
+                        <param name="id">19</param>
+                        <param name="builtin">true</param>
+                        <param name="icon">special://skin/extras/icons/circle-xmark.png</param>
+                        <param name="label">$LOCALIZE[222]</param>
+                    </include>
+                </include>
+            </control>
+        </control>
+        <control type="group">
+            <include content="Animation_Fade_In">
+                <param name="type">WindowOpen</param>
+                <param name="delay">400</param>
+            </include>
+            <control type="group">
+                <right>60</right>
+                <centertop>100</centertop>
+                <height>80</height>
+                <width>80</width>
+                <control type="image">
+                    <include>Texture_Circle_Highlight_V</include>
+                </control>
+                <control type="image">
+                    <bordersize>12</bordersize>
+                    <texture colordiffuse="$VAR[ColorSelected]">special://skin/extras/icons/kodi.png</texture>
+                </control>
+            </control>
+        </control>
+    </controls>
+</window>

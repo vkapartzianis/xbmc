@@ -35,6 +35,7 @@
   <addon>metadata.local</addon>
   <addon>metadata.themoviedb.org.python</addon>
   <addon>metadata.tvshows.themoviedb.org.python</addon>
+  <addon>repository.jurialmunkey</addon>
   <addon>repository.xbmc.org</addon>
   <addon>resource.images.weathericons.default</addon>
   <addon>resource.language.en_gb</addon>
@@ -43,6 +44,7 @@
   <addon>screensaver.xbmc.builtin.dim</addon>
   <addon>script.module.pil</addon>
   <addon>script.module.pycryptodome</addon>
+  <addon>skin.arctic.fuse.2</addon>
   <addon>skin.estuary</addon>
   <addon>webinterface.default</addon>
   <addon>xbmc.addon</addon>

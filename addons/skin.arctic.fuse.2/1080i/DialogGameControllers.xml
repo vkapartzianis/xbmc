@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<window>
+
+    <defaultcontrol always="true">3</defaultcontrol>
+    <!-- <onload>AlarmClock(refocus,SetFocus(18),00:00,silent)</onload> -->
+
+    <controls>
+
+        <!-- Button Template -->
+        <include content="Settings_Button">
+            <param name="id">7</param>
+            <param name="control">button</param>
+            <textoffsetx>20</textoffsetx>
+            <align>center</align>
+            <width>340</width>
+        </include>
+
+        <!-- Button Template -->
+        <include content="Settings_Button">
+            <param name="id">10</param>
+            <param name="control">button</param>
+            <width>400</width>
+        </include>
+
+        <!-- Separator Template -->
+        <control type="image" id="9">
+            <visible>false</visible>
+        </control>
+
+        <!-- Textbox Template -->
+        <control type="textbox" id="32">
+            <visible>false</visible>
+        </control>
+
+        <!-- Label Template -->
+        <include content="Settings_Label">
+            <param name="id">14</param>
+            <param name="control">label</param>
+        </include>
+
+        <include>Dialog_Dim_Overlay</include>
+
+        <control type="group">
+            <include>Animation_Right_Delay</include>
+            <control type="group">
+                <include>Dimension_DialogHugeMenu</include>
+
+
+                <include content="Dialog_Background_Group">
+                    <param name="include_glass">true</param>
+                    <param name="dialog_size">Dimension_DialogHugeMenu</param>
+                </include>
+
+                <control type="group">
+                    <!-- Header -->
+                    <include content="Dialog_Head">
+                        <param name="label">$LOCALIZE[35058]</param>
+                    </include>
+                    <include content="Dialog_Manage_Head_Button">
+                        <param name="onclick">SetFocus(9898)</param>
+                    </include>
+
+                    <!-- Content -->
+                    <control type="group">
+                        <bottom>160</bottom>
+                        <include>Dimension_Dialog_Body</include>
+                        <control type="group" id="8000">
+                            <include>Dimension_Dialog_Body_Group</include>
+                            <control type="group">
+                                <width>400</width>
+                                <control type="image">
+                                    <texture colordiffuse="main_fg_12">common/white.png</texture>
+                                    <height>1</height>
+                                    <top>-20</top>
+                                    <left>20</left>
+                                    <right>20</right>
+                                </control>
+                                <control type="image">
+                                    <texture colordiffuse="main_fg_12">common/white.png</texture>
+                                    <height>1</height>
+                                    <bottom>-20</bottom>
+                                    <left>20</left>
+                                    <right>20</right>
+                                </control>
+                                <control type="grouplist" id="3">
+                                    <onright>5</onright>
+                                </control>
+                            </control>
+                            <control type="group">
+                                <left>420</left>
+                                <right>420</right>
+                                <include content="Dialog_Outline_InnerBox">
+                                    <top>-20</top>
+                                    <bottom>-20</bottom>
+                                </include>
+
+                                <control type="group">
+                                    <left>40</left>
+                                    <right>40</right>
+                                    <control type="gamecontroller" id="31">
+                                        <centerleft>50%</centerleft>
+                                        <width>480</width>
+                                        <height>480</height>
+                                        <!-- <width>480</width>
+                                        <height>480</height> -->
+                                    </control>
+                                    <!-- <control type="textbox" id="32">
+                                        <top>480</top>
+                                        <font>font_main_plot</font>
+                                        <aligny>center</aligny>
+                                        <align>center</align>
+                                    </control> -->
+                                </control>
+
+                            </control>
+                            <control type="group">
+                                <width>400</width>
+                                <right>20</right>
+                                <include content="Dialog_Outline_InnerBox">
+                                    <top>-20</top>
+                                    <bottom>-20</bottom>
+                                    <right>0</right>
+                                    <left>20</left>
+                                </include>
+                                <control type="grouplist" id="5">
+                                    <onleft>3</onleft>
+                                    <pagecontrol>61</pagecontrol>
+                                    <onright>61</onright>
+                                    <left>40</left>
+                                    <right>20</right>
+                                </control>
+                            </control>
+                        </control>
+
+                        <include content="Dialog_Scrollbar">
+                            <param name="id">61</param>
+                            <param name="inset">true</param>
+                            <onleft>5</onleft>
+                            <onright>9898</onright>
+                        </include>
+
+                        <include content="Dialog_InfoText">
+                            <param name="label">$INFO[Control.GetLabel(32)]</param>
+                        </include>
+
+                    </control>
+
+
+                </control>
+
+
+
+            </control>
+
+
+        </control>
+        <include content="Dialog_Manage">
+            <param name="id">9800</param>
+            <param name="onback">8000</param>
+            <param name="include">Items_DialogGameControllers</param>
+        </include>
+
+    </controls>
+</window>

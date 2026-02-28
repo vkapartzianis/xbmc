@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<includes>
+
+    <include name="Spotlight_Fallback_Slideshow">
+        <include content="Object_Hidden_List">
+            <param name="id">99971</param>
+            <include content="Defs_AutoScroll">
+                <param name="condition">[Integer.IsEqual(Window.Property(TMDBHelper.WidgetContainer),301) + ![!Integer.IsEqual(Container(301).NumItems,0) | Container(301).IsUpdating]]</param>
+            </include>
+            <content sortby="random">$VAR[Path_Spotlight_SlideShow_Content]</content>
+            <visible>[Integer.IsEqual(Window.Property(TMDBHelper.WidgetContainer),301) + !$EXP[Exp_Hubs_Spotlight_HasItems]]</visible>
+        </include>
+    </include>
+
+    <include name="Spotlight_Info">
+        <include content="Hub_Widgets_Infopanel">
+            <!-- <animation effect="slide" start="0" end="0,140" time="600" tween="back" easing="out" reversible="false" condition="!$EXP[Exp_Hubs_Spotlight_ShowButtons] + $EXP[Exp_Hubs_Spotlight_SlideDown]">Conditional</animation>
+            <animation effect="slide" end="0" start="0,140" time="600" tween="back" easing="out" reversible="false" condition="![!$EXP[Exp_Hubs_Spotlight_ShowButtons] + $EXP[Exp_Hubs_Spotlight_SlideDown]]">Conditional</animation> -->
+            <animation effect="slide" start="0" end="0,140" time="400" tween="quadratic" reversible="false" condition="!$EXP[Exp_Hubs_Spotlight_ShowButtons] + $EXP[Exp_Hubs_Spotlight_SlideDown]">Conditional</animation>
+            <animation effect="slide" end="0" start="0,140" time="400" tween="quadratic" reversible="false" condition="![!$EXP[Exp_Hubs_Spotlight_ShowButtons] + $EXP[Exp_Hubs_Spotlight_SlideDown]]">Conditional</animation>
+            <include content="Info_Panel">
+                <param name="titlelabel">$VAR[Label_Title_C301]</param>
+                <param name="plotlabel">$VAR[Label_Plot_C301]</param>
+                <param name="container">Container(301).</param>
+                <param name="grouplistid">99952</param>
+                <param name="visible">Integer.IsEqual(Window.Property(TMDBHelper.WidgetContainer),301)</param>
+                <param name="align">bottom</param>
+                <param name="titleautoheight">true</param>
+                <param name="adapative">true</param>
+            </include>
+        </include>
+    </include>
+
+    <include name="Spotlight_List">
+        <param name="window_id">Home</param>
+        <definition>
+            <control type="wraplist" id="301">
+                <preloaditems>2</preloaditems>
+                <onfocus>SetProperty(TMDbHelper.WidgetContainer,301,$PARAM[property_window_id])</onfocus>
+                <onfocus>ClearProperty(Background.ShowOverlay,Home)</onfocus>
+
+                <onfocus condition="Integer.IsEqual(Container(301).NumItems,0)">SetFocus(300)</onfocus>
+                <onfocus condition="!Integer.IsEqual(Container(301).NumItems,0)">SetFocus(311)</onfocus>
+
+                <orientation>horizontal</orientation>
+                <scrolltime tween="quadratic">400</scrolltime>
+                <hitrect x="0" y="0" w="0" h="0" />
+
+                <width>1</width>
+                <height>1</height>
+                <left>-1920</left>
+
+                <include content="Defs_AutoScroll">
+                    <param name="condition">[[!ControlGroup(310).HasFocus() | System.IdleTime(3)] + ![Skin.TimerIsRunning(idle_spotlight_trailer) + !String.IsEmpty(Window(Home).Property(TMDbHelper.ListItem.Trailer)) + !String.IsEqual(Window(Home).Property(PlayTrailer),Window(Home).Property(TMDbHelper.ListItem.Trailer))] + ![Player.HasVideo + String.IsEqual(Window(Home).Property(PlayTrailer),Player.FileNameAndPath)]]</param>
+                </include>
+
+                <itemlayout />
+                <focusedlayout />
+
+                <include content="Object_ContentDynamic">
+                    <param name="sortby">$PARAM[sortby]</param>
+                    <param name="sortorder">$PARAM[sortorder]</param>
+                    <param name="target">$PARAM[target]</param>
+                    <param name="limit">$PARAM[limit]</param>
+                    <param name="browse">never</param>
+                    <param name="content">$PARAM[content]</param>
+                </include>
+
+                <nested />
+
+            </control>
+        </definition>
+    </include>
+
+    <variable name="Spotlight_NF_Color_BG">
+        <value condition="!Skin.HasSetting(RevertSelectedText)">main_fg_12</value>
+        <value>main_fg_100</value>
+    </variable>
+    <variable name="Spotlight_NF_Color_FG">
+        <value condition="!Skin.HasSetting(RevertSelectedText)">main_fg_100</value>
+        <value>main_bg_100</value>
+    </variable>
+
+    <include name="Spotlight_Main_Button_Standard">
+        <onfocus>SetProperty(TMDbHelper.WidgetContainer,301,$PARAM[property_window_id])</onfocus>
+        <onfocus>ClearProperty(Background.ShowOverlay,Home)</onfocus>
+        <onfocus>ClearProperty(Slide.WidgetContainer,$PARAM[property_window_id])</onfocus>
+
+        <oninfo>SetFocus(301)</oninfo>
+        <oninfo>Action(Info)</oninfo>
+        <oninfo>SetFocus($PARAM[id])</oninfo>
+
+        <onback condition="Control.IsVisible(300) + !Integer.IsEqual(Container(300).NumItems,0)">300</onback>
+        <onback condition="![Control.IsVisible(300) + !Integer.IsEqual(Container(300).NumItems,0)]">PreviousMenu</onback>
+    </include>
+
+    <include name="Spotlight_Main">
+        <param name="window_id">Home</param>
+        <param name="visible">True</param>
+        <definition>
+            <control type="group" id="304">
+                <top>hub_spotlight_t</top>
+                <height>hub_spotlight_h</height>
+
+                <!-- Animation for Slides -->
+                <include content="Animation_Fade_In">
+                    <param name="condition">$EXP[Exp_Hubs_Spotlight_ShowButtons]</param>
+                    <param name="delay">200</param>
+                    <param name="time">300</param>
+                </include>
+                <include content="Animation_ConditionalFade">
+                    <param name="condition">!$EXP[Exp_Hubs_Spotlight_ShowButtons]</param>
+                </include>
+
+                <control type="grouplist" id="310">
+                    <orientation>horizontal</orientation>
+
+                    <onleft condition="$EXP[Exp_Hubs_Spotlight_HasItems]">Control.Move(301,-1)</onleft>
+                    <onleft condition="!$EXP[Exp_Hubs_Spotlight_HasItems]">Control.Move(99971,-1)</onleft>
+
+                    <onright condition="$EXP[Exp_Hubs_Spotlight_HasItems]">Control.Move(301,1)</onright>
+                    <onright condition="!$EXP[Exp_Hubs_Spotlight_HasItems]">Control.Move(99971,1)</onright>
+
+                    <onup>300</onup>
+                    <ondown>400</ondown>
+
+                    <centertop>160</centertop>
+                    <left>20</left>
+                    <height>160</height>
+                    <onfocus>ClearProperty(Slide.WidgetContainer,$PARAM[property_window_id])</onfocus>
+
+                    <control type="image" id="314">
+                        <width>40</width>
+                        <height>40</height>
+                        <centertop>50%</centertop>
+                        <texture colordiffuse="main_fg_30">special://skin/extras/icons/angle-left.png</texture>
+                        <include content="Animation_Fade_Out">
+                            <param name="condition">!ControlGroup(310).HasFocus()</param>
+                        </include>
+                        <include content="Animation_Fade_In">
+                            <param name="condition">ControlGroup(310).HasFocus()</param>
+                        </include>
+                    </control>
+
+                    <include content="DialogInfo_Button_PlayBrowse">
+                        <param name="id">311</param>
+                        <param name="groupid">321</param>
+                        <param name="width">280</param>
+                        <param name="name">$VAR[Label_Title_C301]</param>
+                        <param name="role">$VAR[Label_FullscreenWidget_PlayButton]</param>
+                        <param name="icon">$VAR[Image_FullscreenWidget_PlayButton]</param>
+
+                        <onclick>$VAR[Action_Spotlight_PlayMedia]</onclick>
+
+                        <include content="Spotlight_Main_Button_Standard">
+                            <param name="id">311</param>
+                            <param name="window_id">$PARAM[window_id]</param>
+                            <param name="property_window_id">$PARAM[property_window_id]</param>
+                        </include>
+                        <!-- Reset Widget Group Position -->
+                        <include content="Action_Widgets_ResetPosition_OnFocus">
+                            <param name="condition">Container(400).HasPrevious</param>
+                        </include>
+                    </include>
+
+                    <include content="DialogInfo_Button_PlayBrowse">
+                        <param name="id">312</param>
+                        <param name="groupid">322</param>
+                        <param name="width">360</param>
+                        <param name="name">$VAR[Label_Title_C301]</param>
+                        <param name="role">$VAR[Label_FullscreenWidget_InfoButton]</param>
+                        <param name="icon">$VAR[Image_FullscreenWidget_InfoButton]</param>
+
+                        <onclick condition="$EXP[Exp_Hubs_Spotlight_HasItems]">SetFocus(301)</onclick>
+                        <onclick condition="$EXP[Exp_Hubs_Spotlight_HasItems]">$VAR[Action_FullscreenWidget_InfoButton]</onclick>
+                        <onclick condition="$EXP[Exp_Hubs_Spotlight_HasItems]">SetFocus(312)</onclick>
+                        <onclick condition="!$EXP[Exp_Hubs_Spotlight_HasItems] + Weather.IsFetched">ActivateWindow(1161)</onclick>
+                        <onclick condition="!$EXP[Exp_Hubs_Spotlight_HasItems] + !Weather.IsFetched">ActivateWindow(systeminfo)</onclick>
+                        <include content="Spotlight_Main_Button_Standard">
+                            <param name="id">312</param>
+                            <param name="window_id">$PARAM[window_id]</param>
+                            <param name="property_window_id">$PARAM[property_window_id]</param>
+                        </include>
+                    </include>
+
+                    <control type="image" id="315">
+                        <left>0</left>
+                        <width>40</width>
+                        <height>40</height>
+                        <centertop>50%</centertop>
+                        <texture colordiffuse="main_fg_30">special://skin/extras/icons/angle-right.png</texture>
+                        <include content="Animation_Fade_Out">
+                            <param name="condition">!ControlGroup(310).HasFocus()</param>
+                        </include>
+                        <include content="Animation_Fade_In">
+                            <param name="condition">ControlGroup(310).HasFocus()</param>
+                        </include>
+                    </control>
+
+                </control>
+            </control>
+        </definition>
+    </include>
+
+</includes>

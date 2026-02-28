@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<includes>
+
+    <!-- Selected Color -->
+    <variable name="Shortcuts_ColorSelected_30">
+        <value condition="ControlGroup(29000).HasFocus()">dialog_fg_70</value>
+        <value>$VAR[ColorSelected_30]</value>
+    </variable>
+
+    <variable name="Shortcuts_HideHubs_Icon">
+        <value condition="!String.IsEmpty(Window.Property(show_all_hubs))">special://skin/extras/icons/watched-show.png</value>
+        <value>special://skin/extras/icons/watched-hide.png</value>
+    </variable>
+
+    <expression name="Shortcuts_Dialog_Exp_IsWidgetMode">[String.IsEqual(Window(Home).Property(Shortcuts.EditMode),mode=widgets) | String.IsEqual(Window(Home).Property(Shortcuts.EditMenu),menu=searchmenu) | String.EndsWith(Window(Home).Property(Shortcuts.EditMenu),-widgetsonly) | String.EndsWith(Window(Home).Property(Shortcuts.EditMenu),-globalwidgets) | String.EndsWith(Window(Home).Property(Shortcuts.EditMenu),-extendedwidgets)]</expression>
+
+    <expression name="Shortcuts_Dialog_Exp_WidgetsOnly">[[Skin.HasSetting(Hub.Home.DisableSubmenu) + String.IsEqual(Window(Home).Property(Shortcuts.EditMenu),menu=sidemenu)] | [Skin.HasSetting(Hub.1101.DisableSubmenu) + String.IsEqual(Window(Home).Property(Shortcuts.EditMenu),menu=1101menu)] | [Skin.HasSetting(Hub.1102.DisableSubmenu) + String.IsEqual(Window(Home).Property(Shortcuts.EditMenu),menu=1102menu)] | [Skin.HasSetting(Hub.1103.DisableSubmenu) + String.IsEqual(Window(Home).Property(Shortcuts.EditMenu),menu=1103menu)] | [Skin.HasSetting(Hub.1104.DisableSubmenu) + String.IsEqual(Window(Home).Property(Shortcuts.EditMenu),menu=1104menu)] | [Skin.HasSetting(Hub.1105.DisableSubmenu) + String.IsEqual(Window(Home).Property(Shortcuts.EditMenu),menu=1105menu)] | [Skin.HasSetting(Hub.1106.DisableSubmenu) + String.IsEqual(Window(Home).Property(Shortcuts.EditMenu),menu=1106menu)] | [Skin.HasSetting(Hub.1107.DisableSubmenu) + String.IsEqual(Window(Home).Property(Shortcuts.EditMenu),menu=1107menu)] | [Skin.HasSetting(Hub.1108.DisableSubmenu) + String.IsEqual(Window(Home).Property(Shortcuts.EditMenu),menu=1108menu)] | [Skin.HasSetting(Hub.1109.DisableSubmenu) + String.IsEqual(Window(Home).Property(Shortcuts.EditMenu),menu=1109menu)]]</expression>
+
+    <expression name="Shortcuts_Window_Exp_WidgetsOnly">[[Skin.HasSetting(Hub.Home.DisableSubmenu) + String.IsEqual(Container(30000).ListItem.Property(categories_menu),menu=sidemenu)] | [Skin.HasSetting(Hub.1101.DisableSubmenu) + String.IsEqual(Container(30000).ListItem.Property(categories_menu),menu=1101menu)] | [Skin.HasSetting(Hub.1102.DisableSubmenu) + String.IsEqual(Container(30000).ListItem.Property(categories_menu),menu=1102menu)] | [Skin.HasSetting(Hub.1103.DisableSubmenu) + String.IsEqual(Container(30000).ListItem.Property(categories_menu),menu=1103menu)] | [Skin.HasSetting(Hub.1104.DisableSubmenu) + String.IsEqual(Container(30000).ListItem.Property(categories_menu),menu=1104menu)] | [Skin.HasSetting(Hub.1105.DisableSubmenu) + String.IsEqual(Container(30000).ListItem.Property(categories_menu),menu=1105menu)] | [Skin.HasSetting(Hub.1106.DisableSubmenu) + String.IsEqual(Container(30000).ListItem.Property(categories_menu),menu=1106menu)] | [Skin.HasSetting(Hub.1107.DisableSubmenu) + String.IsEqual(Container(30000).ListItem.Property(categories_menu),menu=1107menu)] | [Skin.HasSetting(Hub.1108.DisableSubmenu) + String.IsEqual(Container(30000).ListItem.Property(categories_menu),menu=1108menu)] | [Skin.HasSetting(Hub.1109.DisableSubmenu) + String.IsEqual(Container(30000).ListItem.Property(categories_menu),menu=1109menu)]]</expression>
+
+    <expression name="Shortcuts_Window_Exp_IsHomeHub">[String.IsEqual(Window(Home).Property(Shortcuts.EditMenu),menu=sidemenu) | [String.IsEqual(Window(Home).Property(Shortcuts.EditMenu),menu=1101menu) + Integer.IsEqual(Skin.String(Hub.Home.ReplaceWindow),1101)] | [String.IsEqual(Window(Home).Property(Shortcuts.EditMenu),menu=1102menu) + Integer.IsEqual(Skin.String(Hub.Home.ReplaceWindow),1102)] | [String.IsEqual(Window(Home).Property(Shortcuts.EditMenu),menu=1103menu) + Integer.IsEqual(Skin.String(Hub.Home.ReplaceWindow),1103)] | [String.IsEqual(Window(Home).Property(Shortcuts.EditMenu),menu=1104menu) + Integer.IsEqual(Skin.String(Hub.Home.ReplaceWindow),1104)] | [String.IsEqual(Window(Home).Property(Shortcuts.EditMenu),menu=1106menu) + Integer.IsEqual(Skin.String(Hub.Home.ReplaceWindow),1106)] | [String.IsEqual(Window(Home).Property(Shortcuts.EditMenu),menu=1107menu) + Integer.IsEqual(Skin.String(Hub.Home.ReplaceWindow),1107)] | [String.IsEqual(Window(Home).Property(Shortcuts.EditMenu),menu=1108menu) + Integer.IsEqual(Skin.String(Hub.Home.ReplaceWindow),1108)] | [String.IsEqual(Window(Home).Property(Shortcuts.EditMenu),menu=1109menu) + Integer.IsEqual(Skin.String(Hub.Home.ReplaceWindow),1109)]]</expression>
+
+    <expression name="Shortcuts_Window_Exp_ExpandedInformation">[[Skin.HasSetting(Hub.Home.EnableDetailedInformation) + String.IsEqual(Container(30000).ListItem.Property(categories_menu),menu=sidemenu)] | [Skin.HasSetting(Hub.1101.EnableDetailedInformation) + String.IsEqual(Container(30000).ListItem.Property(categories_menu),menu=1101menu)] | [Skin.HasSetting(Hub.1102.EnableDetailedInformation) + String.IsEqual(Container(30000).ListItem.Property(categories_menu),menu=1102menu)] | [Skin.HasSetting(Hub.1103.EnableDetailedInformation) + String.IsEqual(Container(30000).ListItem.Property(categories_menu),menu=1103menu)] | [Skin.HasSetting(Hub.1104.EnableDetailedInformation) + String.IsEqual(Container(30000).ListItem.Property(categories_menu),menu=1104menu)] | [Skin.HasSetting(Hub.1105.EnableDetailedInformation) + String.IsEqual(Container(30000).ListItem.Property(categories_menu),menu=1105menu)] | [Skin.HasSetting(Hub.1106.EnableDetailedInformation) + String.IsEqual(Container(30000).ListItem.Property(categories_menu),menu=1106menu)] | [Skin.HasSetting(Hub.1107.EnableDetailedInformation) + String.IsEqual(Container(30000).ListItem.Property(categories_menu),menu=1107menu)] | [Skin.HasSetting(Hub.1108.EnableDetailedInformation) + String.IsEqual(Container(30000).ListItem.Property(categories_menu),menu=1108menu)] | [Skin.HasSetting(Hub.1109.EnableDetailedInformation) + String.IsEqual(Container(30000).ListItem.Property(categories_menu),menu=1109menu)]]</expression>
+
+    <expression name="Shortcuts_Dialog_Exp_HasShortcutPath">[!String.IsEmpty(Container(22001).ListItem.Property(path)) + !String.IsEmpty(Container(22001).ListItem.Property(target)) + !String.Contains(Window(Home).Property(Shortcuts.EditMenu),-customnode-) + !$EXP[Shortcuts_Dialog_Exp_IsWidgetMode]]</expression>
+    <expression name="Shortcuts_Dialog_Exp_HasSideMenuEdit">[[$EXP[Shortcuts_Window_Exp_IsHomeHub] + String.IsEmpty(Window(Home).Property(Shortcuts.EditMode)) + String.IsEmpty(Window(Home).Property(Shortcuts.EditGUID)) + String.IsEmpty(Skin.String(Home.LeftMenu.Action))] | String.IsEqual(Container(22001).ListItem.Property(path),Custom_Menu)]</expression>
+    <expression name="Shortcuts_Dialog_Exp_HasEditBackground">[!$EXP[Shortcuts_Dialog_Exp_IsWidgetMode] + !String.Contains(Window(Home).Property(Shortcuts.EditMenu),-customnode-) + !String.IsEmpty(Window(Home).Property(Shortcuts.EditGUID))]</expression>
+    <expression name="Shortcuts_Dialog_Exp_HasCustomSubmenu">[String.IsEqual(Container(22001).ListItem.Property(path),Custom_Submenu)]</expression>
+
+    <expression name="Shortcuts_Dialog_Exp_IsOpenInDialog">[String.IsEqual(Container(22001).ListItem.Property(path_opendialog),True)]</expression>
+    <expression name="Shortcuts_Dialog_Exp_IsOpenInExpandedDialog">[String.IsEqual(Container(22001).ListItem.Property(path_opendialog_expanded),True)]</expression>
+    <expression name="Shortcuts_Dialog_Exp_IsOpenInPlotBoxDialog">[String.IsEqual(Container(22001).ListItem.Property(path_opendialog_plotbox),True)]</expression>
+
+    <expression name="Shortcuts_Dialog_Exp_IsEnabled">[!String.IsEqual(Container(22001).ListItem.Property(disabled),True) + $EXP[Shortcuts_Dialog_Exp_IsNotBlank]]</expression>
+    <expression name="Shortcuts_Dialog_Exp_IsNotBlank">[!String.IsEqual(Container(22001).ListItem.Property(blank),True)]</expression>
+
+    <variable name="Shortcuts_Window_Var_Label_HubName">
+        <value condition="String.IsEqual(Container(30000).ListItem.Property(hub_prefix),1101)">$VAR[Label_Header_Main_1101]</value>
+        <value condition="String.IsEqual(Container(30000).ListItem.Property(hub_prefix),1102)">$VAR[Label_Header_Main_1102]</value>
+        <value condition="String.IsEqual(Container(30000).ListItem.Property(hub_prefix),1103)">$VAR[Label_Header_Main_1103]</value>
+        <value condition="String.IsEqual(Container(30000).ListItem.Property(hub_prefix),1104)">$VAR[Label_Header_Main_1104]</value>
+        <value condition="String.IsEqual(Container(30000).ListItem.Property(hub_prefix),1106)">$VAR[Label_Header_Main_1106]</value>
+        <value condition="String.IsEqual(Container(30000).ListItem.Property(hub_prefix),1107)">$VAR[Label_Header_Main_1107]</value>
+        <value condition="String.IsEqual(Container(30000).ListItem.Property(hub_prefix),1108)">$VAR[Label_Header_Main_1108]</value>
+        <value condition="String.IsEqual(Container(30000).ListItem.Property(hub_prefix),1109)">$VAR[Label_Header_Main_1109]</value>
+    </variable>
+
+    <variable name="Shortcuts_Window_Var_HomeItem_Property_Value">
+        <value condition="Skin.String(Hub.Home.ReplaceWindow,$NUMBER[1101])">Hub.1101</value>
+        <value condition="Skin.String(Hub.Home.ReplaceWindow,$NUMBER[1102])">Hub.1102</value>
+        <value condition="Skin.String(Hub.Home.ReplaceWindow,$NUMBER[1103])">Hub.1103</value>
+        <value condition="Skin.String(Hub.Home.ReplaceWindow,$NUMBER[1104])">Hub.1104</value>
+        <value condition="Skin.String(Hub.Home.ReplaceWindow,$NUMBER[1106])">Hub.1106</value>
+        <value condition="Skin.String(Hub.Home.ReplaceWindow,$NUMBER[1107])">Hub.1107</value>
+        <value condition="Skin.String(Hub.Home.ReplaceWindow,$NUMBER[1108])">Hub.1108</value>
+        <value condition="Skin.String(Hub.Home.ReplaceWindow,$NUMBER[1109])">Hub.1109</value>
+        <value>Hub.Home</value>
+    </variable>
+
+    <variable name="Shortcuts_Window_Var_HomeItem_Property_Categories_Menu">
+        <value condition="Skin.String(Hub.Home.ReplaceWindow,$NUMBER[1101])">menu=1101menu</value>
+        <value condition="Skin.String(Hub.Home.ReplaceWindow,$NUMBER[1102])">menu=1102menu</value>
+        <value condition="Skin.String(Hub.Home.ReplaceWindow,$NUMBER[1103])">menu=1103menu</value>
+        <value condition="Skin.String(Hub.Home.ReplaceWindow,$NUMBER[1104])">menu=1104menu</value>
+        <value condition="Skin.String(Hub.Home.ReplaceWindow,$NUMBER[1106])">menu=1106menu</value>
+        <value condition="Skin.String(Hub.Home.ReplaceWindow,$NUMBER[1107])">menu=1107menu</value>
+        <value condition="Skin.String(Hub.Home.ReplaceWindow,$NUMBER[1108])">menu=1108menu</value>
+        <value condition="Skin.String(Hub.Home.ReplaceWindow,$NUMBER[1109])">menu=1109menu</value>
+        <value>menu=sidemenu</value>
+    </variable>
+
+    <variable name="Shortcuts_Window_Var_HomeItem_Property_Categories_Hub_Prefix">
+        <value condition="Skin.String(Hub.Home.ReplaceWindow,$NUMBER[1101])">$NUMBER[1101]</value>
+        <value condition="Skin.String(Hub.Home.ReplaceWindow,$NUMBER[1102])">$NUMBER[1102]</value>
+        <value condition="Skin.String(Hub.Home.ReplaceWindow,$NUMBER[1103])">$NUMBER[1103]</value>
+        <value condition="Skin.String(Hub.Home.ReplaceWindow,$NUMBER[1104])">$NUMBER[1104]</value>
+        <value condition="Skin.String(Hub.Home.ReplaceWindow,$NUMBER[1106])">$NUMBER[1106]</value>
+        <value condition="Skin.String(Hub.Home.ReplaceWindow,$NUMBER[1107])">$NUMBER[1107]</value>
+        <value condition="Skin.String(Hub.Home.ReplaceWindow,$NUMBER[1108])">$NUMBER[1108]</value>
+        <value condition="Skin.String(Hub.Home.ReplaceWindow,$NUMBER[1109])">$NUMBER[1109]</value>
+        <value>Home</value>
+    </variable>
+
+    <variable name="Shortcuts_Window_Var_HomeItem_Property_Current_Home_Hub">
+        <value condition="Skin.String(Hub.Home.ReplaceWindow,$NUMBER[1101])">$LOCALIZE[31026] $NUMBER[1101]</value>
+        <value condition="Skin.String(Hub.Home.ReplaceWindow,$NUMBER[1102])">$LOCALIZE[31026] $NUMBER[1102]</value>
+        <value condition="Skin.String(Hub.Home.ReplaceWindow,$NUMBER[1103])">$LOCALIZE[31026] $NUMBER[1103]</value>
+        <value condition="Skin.String(Hub.Home.ReplaceWindow,$NUMBER[1104])">$LOCALIZE[31026] $NUMBER[1104]</value>
+        <value condition="Skin.String(Hub.Home.ReplaceWindow,$NUMBER[1106])">$LOCALIZE[31026] $NUMBER[1106]</value>
+        <value condition="Skin.String(Hub.Home.ReplaceWindow,$NUMBER[1107])">$LOCALIZE[31026] $NUMBER[1107]</value>
+        <value condition="Skin.String(Hub.Home.ReplaceWindow,$NUMBER[1108])">$LOCALIZE[31026] $NUMBER[1108]</value>
+        <value condition="Skin.String(Hub.Home.ReplaceWindow,$NUMBER[1109])">$LOCALIZE[31026] $NUMBER[1109]</value>
+        <value>$LOCALIZE[31143] $LOCALIZE[10000]</value>
+    </variable>
+
+
+    <include name="Shortcuts_Window_UseAsHome_Toggle_OnClick">
+        <onclick condition="String.IsEqual(Container(30000).ListItem.Property(categories_menu),menu=$PARAM[id]menu) + !Skin.String(Hub.Home.ReplaceWindow,$NUMBER[$PARAM[id]])">Skin.SetString(Hub.Home.ReplaceWindow,$NUMBER[$PARAM[id]])</onclick>
+        <onclick condition="String.IsEqual(Container(30000).ListItem.Property(categories_menu),menu=$PARAM[id]menu) + Skin.String(Hub.Home.ReplaceWindow,$NUMBER[$PARAM[id]])">Skin.Reset(Hub.Home.ReplaceWindow)</onclick>
+    </include>
+
+    <variable name="Shortcuts_Window_Var_Label_ClassicMode">
+        <value condition="!$EXP[Shortcuts_Window_Exp_WidgetsOnly]">$LOCALIZE[10038] ($LOCALIZE[31103] + $LOCALIZE[14116] + $LOCALIZE[31147])</value>
+        <value condition="!$EXP[Shortcuts_Window_Exp_ExpandedInformation]">$LOCALIZE[10036] ($LOCALIZE[31103])</value>
+        <value>$LOCALIZE[31137] ($LOCALIZE[31103] + $LOCALIZE[14116])</value>
+    </variable>
+
+    <variable name="Shortcuts_Window_Var_Label_ClassicMode_Preselect">
+        <value condition="!$EXP[Shortcuts_Window_Exp_WidgetsOnly]">$LOCALIZE[10038]</value>
+        <value condition="!$EXP[Shortcuts_Window_Exp_ExpandedInformation]">$LOCALIZE[10036]</value>
+        <value>$LOCALIZE[31137]</value>
+    </variable>
+
+    <variable name="Shortcuts_Window_Var_Image_ClassicMode">
+        <value condition="$EXP[Shortcuts_Window_Exp_WidgetsOnly]">special://skin/extras/icons/diagram-next.png</value>
+        <value>special://skin/extras/icons/route.png</value>
+    </variable>
+
+</includes>

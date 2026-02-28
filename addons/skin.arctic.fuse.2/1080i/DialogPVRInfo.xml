@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<window type="dialog">
+
+    <defaultcontrol always="true">9000</defaultcontrol>
+    <menucontrol>9898</menucontrol>
+    <include>DialogInfo_Onload</include>
+
+    <controls>
+
+        <include>Defs_Background_Loader</include>
+
+        <include>Dialog_Dim_Overlay</include>
+
+        <control type="group">
+            <include>Dimension_DialogHugeMenu</include>
+            <include>Animation_Right_Delay</include>
+
+            <include content="Dialog_Background_Group">
+                <param name="include_glass">true</param>
+                <param name="dialog_size">Dimension_DialogHugeMenu</param>
+            </include>
+
+            <control type="group">
+                <!-- Header -->
+                <include content="Dialog_Head">
+                    <param name="label">$VAR[Label_Title]</param>
+                </include>
+                <include>Dialog_Manage_Head_Button</include>
+
+                <!-- Content -->
+                <control type="group" id="8000">
+                    <bottom>160</bottom>
+                    <include>Dimension_Dialog_Body</include>
+                    <control type="group">
+                        <include>Dimension_Dialog_Body_Group</include>
+                        <include content="DialogInfo_PlotBox_Artwork">
+                            <param name="square_icon">$INFO[ListItem.Icon]</param>
+                            <param name="landscape_icon">$VAR[Image_PVREpgLandscapeArt]</param>
+                        </include>
+                        <include content="Dialog_Outline_InnerBox">
+                            <left>420</left>
+                            <top>-20</top>
+                            <bottom>-20</bottom>
+                            <right>20</right>
+                            <control type="textbox">
+                                <top>35</top>
+                                <bottom>35</bottom>
+                                <font>font_midi_plot</font>
+                                <textcolor>main_fg_70</textcolor>
+                                <label>[B][COLOR=main_fg_90]$LOCALIZE[31181][/COLOR][/B][CR]$INFO[ListItem.StartDate,,[CR]]$INFO[ListItem.StartTime]$INFO[ListItem.EndTime, - ,]$INFO[ListItem.Genre,[CR][CR][B][COLOR=main_fg_90]$LOCALIZE[515][/COLOR][/B][CR],]$VAR[Label_PVR_Episode,[CR][CR][B][COLOR=main_fg_90]$LOCALIZE[20359][/COLOR][/B][CR],][CR][CR]$INFO[ListItem.Plot,[B][COLOR=main_fg_90]$LOCALIZE[31028][/COLOR][/B][CR],]</label>
+                                <include content="Dimension_Padding">
+                                    <param name="pad">40</param>
+                                </include>
+                                <pagecontrol>61</pagecontrol>
+                            </control>
+                        </include>
+                    </control>
+
+                    <include content="Dialog_InfoText">
+                        <param name="label">$INFO[PVR.BackendName]$INFO[PVR.BackendVersion, • v,]</param>
+                    </include>
+                    <include content="Object_Hidden_Button">
+                        <param name="id">9000</param>
+                        <onfocus condition="Control.IsVisible(61)">SetFocus(61)</onfocus>
+                        <onright>61</onright>
+                    </include>
+                    <include content="Dialog_Scrollbar">
+                        <param name="id">61</param>
+                        <param name="inset">true</param>
+                        <onright>9898</onright>
+                    </include>
+
+                </control>
+
+
+            </control>
+
+
+
+        </control>
+
+        <include content="Dialog_Manage">
+            <param name="onback">8000</param>
+            <param name="include">Items_DialogPVRInfo</param>
+        </include>
+    </controls>
+</window>

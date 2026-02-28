@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<window type="dialog" id="1123">
+
+    <defaultcontrol always="true">9000</defaultcontrol>
+    <onload condition="String.IsEmpty(Window(Home).Property(PlayTrailer))">Close</onload>
+    <onload condition="String.IsEmpty(Window(Home).Property(PlayTrailerTitle))">SetProperty(PlayTrailerTitle,$LOCALIZE[20410],Home)</onload>
+    <onload condition="!String.IsEmpty(Window(Home).Property(PlayTrailer)) + Player.HasVideo + !String.IsEqual(Window(Home).Property(PlayTrailer),Player.FileNameAndPath)">Action(Stop)</onload>
+    <onload condition="!String.IsEmpty(Window(Home).Property(PlayTrailer)) + [!Player.HasVideo | !String.IsEqual(Window(Home).Property(PlayTrailer),Player.FileNameAndPath)]">PlayMedia($ESCINFO[Window(Home).Property(PlayTrailer)],False,1)</onload>
+    <onunload>ClearProperty(TrailerFullscreen,1123)</onunload>
+    <onunload condition="Player.HasVideo">Action(Stop)</onunload>
+    <onload>SetProperty(TMDbHelper.ContextMenu,True)</onload>
+    <controls>
+
+        <include>Dialog_Dim_Overlay</include>
+
+        <control type="group">
+            <include>Animation_Right_Delay</include>
+            <control type="group">
+                <include>Dimension_DialogHugeMenu</include>
+
+                <include content="Dialog_Foreground_Side">
+                    <param name="dialog_size">Dimension_DialogHugeMenu</param>
+                </include>
+
+                <control type="group">
+                    <!-- Header -->
+                    <include content="Dialog_Head">
+                        <param name="label">$INFO[Window(Home).Property(PlayTrailerTitle)]</param>
+                    </include>
+                    <include content="Dialog_Manage_Head_Button">
+                        <param name="onclick">SetFocus(9898)</param>
+                    </include>
+
+                    <!-- Content -->
+                    <control type="group">
+                        <include>Dimension_Dialog_Body</include>
+                        <control type="group">
+                            <include>Dimension_Dialog_Body_Group</include>
+                            <control type="group">
+                                <include content="Dimension_Padding">
+                                    <param name="pad">20</param>
+                                </include>
+                                <include content="Dialog_Outline_InnerBox">
+                                    <control type="image">
+                                        <texture border="20" colordiffuse="black">common/dialog.png</texture>
+                                    </control>
+                                    <control type="videowindow" />
+                                </include>
+                                <control type="group">
+                                    <height>12</height>
+                                    <centerbottom>-40</centerbottom>
+                                    <control type="progress" id="499">
+                                        <width>100%</width>
+                                        <height>12</height>
+                                        <info>Player.Progress</info>
+                                        <visible>Player.HasVideo</visible>
+                                        <texturebg colordiffuse="00ffffff" border="12,0,12,0">progress/progress-nib.png</texturebg>
+                                    </control>
+                                    <control type="progress">
+                                        <description>Progressbar</description>
+                                        <width>100%</width>
+                                        <height>12</height>
+                                        <info>Player.Progress</info>
+                                        <texturebg colordiffuse="00ffffff" border="12,0,12,0">progress/progress-bg.png</texturebg>
+                                        <midtexture colordiffuse="$VAR[ColorGradient]" border="12,0,12,0" diffuse="progress/diffuse.png">progress/progress-bg.png</midtexture>
+                                        <include content="Defs_Progress_Colorfade">
+                                            <param name="id">499</param>
+                                        </include>
+                                        <visible>Player.HasVideo</visible>
+                                    </control>
+                                </control>
+                            </control>
+                        </control>
+                    </control>
+                </control>
+            </control>
+
+
+
+        </control>
+
+        <include content="Object_Hidden_Button">
+            <param name="id">9000</param>
+            <onup>SetFocus(9898)</onup>
+            <ondown>SetFocus(9898)</ondown>
+            <onleft condition="Player.HasVideo">Seek(-10)</onleft>
+            <onright condition="Player.HasVideo">Seek(10)</onright>
+        </include>
+
+        <include content="Dialog_Manage">
+            <param name="onback">9000</param>
+            <param name="include">Items_DialogTrailer</param>
+        </include>
+
+        <control type="group">
+            <visible>Player.HasVideo</visible>
+            <visible>!String.IsEmpty(Window.Property(TrailerFullscreen))</visible>
+            <control type="image">
+                <texture colordiffuse="black">common/white.png</texture>
+            </control>
+            <control type="videowindow" />
+        </control>
+    </controls>
+</window>

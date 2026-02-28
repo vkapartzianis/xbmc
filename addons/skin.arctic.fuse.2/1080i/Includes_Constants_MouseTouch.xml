@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<includes>
+
+    <constant name="widget_tbump_h_detailed">140</constant>  <!-- Bumper to address label top spacing (140) [200] {640} -->
+    <constant name="widget_tbump_h">200</constant>  <!-- Bumper to address label top spacing (140) [200] {640} -->
+    <constant name="widget_label_t">-140</constant>  <!-- Space from widget bottom to next widget label [-140] {-580} -->
+    <constant name="widget_items_h">570</constant>  <!-- Widget position from bottom (570) [570] {1010} -->
+    <constant name="widget_items_h_gallery">1010</constant>
+    <constant name="widget_grouplist_b_detailed">-440</constant>
+
+</includes>

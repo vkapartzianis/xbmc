@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<window type="dialog">
+
+    <menucontrol>9800</menucontrol>
+    <defaultcontrol always="true">9000</defaultcontrol>
+    <onload>AlarmClock(refocus,SetFocus(9000),00:00,silent)</onload>
+
+
+    <controls>
+
+        <include>Dialog_Dim_Overlay</include>
+
+        <control type="group">
+            <include>Dimension_DialogHugeMenu</include>
+            <include>Animation_Right_Delay</include>
+
+            <include content="Dialog_Background_Group">
+                <param name="include_glass">true</param>
+                <param name="dialog_size">Dimension_DialogHugeMenu</param>
+            </include>
+
+            <control type="group">
+                <!-- Header -->
+                <include content="Dialog_Head">
+                    <param name="label">$INFO[ListItem.Label]</param>
+                </include>
+                <include>Dialog_Manage_Head_Button</include>
+
+                <!-- Content -->
+                <control type="group" id="8000">
+                    <bottom>160</bottom>
+                    <include>Dimension_Dialog_Body</include>
+                    <control type="group">
+                        <include>Dimension_Dialog_Body_Group</include>
+                        <include>DialogInfo_PlotBox_Artwork</include>
+                        <include content="Dialog_Outline_InnerBox">
+                            <left>420</left>
+                            <top>-20</top>
+                            <bottom>-20</bottom>
+                            <right>20</right>
+                        </include>
+                        <control type="grouplist">
+                            <top>30</top>
+                            <right>60</right>
+                            <bottom>30</bottom>
+                            <left>460</left>
+                            <orientation>vertical</orientation>
+                            <itemgap>20</itemgap>
+                            <control type="label">
+                                <font>font_midi_bold</font>
+                                <height>40</height>
+                                <textcolor>main_fg_90</textcolor>
+                                <label>$LOCALIZE[20037]</label>
+                            </control>
+                            <control type="label">
+                                <font>font_midi_plot</font>
+                                <height>40</height>
+                                <label fallback="19055">$INFO[ListItem.AddonSummary]</label>
+                            </control>
+
+                            <control type="group">
+                                <height>40</height>
+                                <control type="image">
+                                    <left>8</left>
+                                    <height>48</height>
+                                    <width>48</width>
+                                    <texture colordiffuse="dialog_fg_90">special://skin/extras/icons/id-card.png</texture>
+                                    <centertop>50%</centertop>
+                                </control>
+                                <control type="label">
+                                    <left>60</left>
+                                    <font>font_midi</font>
+                                    <label>$INFO[ListItem.AddonCreator]</label>
+                                </control>
+                            </control>
+
+                            <control type="group">
+                                <height>40</height>
+                                <control type="image">
+                                    <left>8</left>
+                                    <height>48</height>
+                                    <width>48</width>
+                                    <texture colordiffuse="dialog_fg_90">special://skin/extras/icons/tag.png</texture>
+                                    <centertop>50%</centertop>
+                                </control>
+                                <control type="label">
+                                    <left>60</left>
+                                    <font>font_midi</font>
+                                    <label>$INFO[ListItem.AddonType]</label>
+                                </control>
+                            </control>
+
+                            <control type="group">
+                                <height>40</height>
+                                <control type="image">
+                                    <left>8</left>
+                                    <height>48</height>
+                                    <width>48</width>
+                                    <texture colordiffuse="dialog_fg_90">special://skin/extras/icons/code-branch.png</texture>
+                                    <centertop>50%</centertop>
+                                </control>
+                                <control type="label">
+                                    <left>60</left>
+                                    <font>font_midi</font>
+                                    <label>$INFO[ListItem.AddonVersion,v,]</label>
+                                </control>
+                            </control>
+
+                            <control type="group">
+                                <height>40</height>
+                                <control type="image">
+                                    <left>8</left>
+                                    <height>48</height>
+                                    <width>48</width>
+                                    <texture colordiffuse="dialog_fg_90">special://skin/extras/icons/clock-rotate-left.png</texture>
+                                    <centertop>50%</centertop>
+                                </control>
+                                <control type="label">
+                                    <left>60</left>
+                                    <font>font_midi</font>
+                                    <label>$VAR[Label_AddonInfo_LastUpdated]</label>
+                                </control>
+                            </control>
+
+                            <control type="textbox">
+                                <top>40</top>
+                                <font>font_midi_plot</font>
+                                <height>160</height>
+                                <autoscroll>false</autoscroll>
+                                <pagecontrol>61</pagecontrol>
+                                <label fallback="19055">$INFO[ListItem.AddonDescription,[B][COLOR=dialog_fg_90]$LOCALIZE[21821][/B][/COLOR][CR],[CR][CR]]$INFO[ListItem.AddonNews,[B][COLOR=dialog_fg_90]$LOCALIZE[29916][/B][/COLOR][CR],]</label>
+                            </control>
+
+                        </control>
+                    </control>
+                    <include content="Dialog_InfoText">
+                        <param name="label">$INFO[ListItem.AddonDisclaimer]</param>
+                        <param name="fallback">$INFO[System.BuildVersion,Kodi ,]$INFO[System.AddonVersion(skin.arctic.fuse.2), • AF2 v,]</param>
+                    </include>
+                    <include content="Object_Hidden_Button">
+                        <param name="id">9000</param>
+                        <onfocus condition="Control.IsVisible(61)">SetFocus(61)</onfocus>
+                        <onright>61</onright>
+                    </include>
+                    <include content="Dialog_Scrollbar">
+                        <param name="id">61</param>
+                        <param name="inset">true</param>
+                        <onright>9898</onright>
+                    </include>
+                </control>
+
+            </control>
+
+
+        </control>
+
+        <include content="Object_Hidden_Button">
+            <param name="id">7</param>
+        </include>
+
+        <include content="Dialog_Manage">
+            <param name="onback">9000</param>
+            <param name="focus_id">99</param>
+            <param name="include">Items_DialogAddonInfo</param>
+        </include>
+    </controls>
+</window>

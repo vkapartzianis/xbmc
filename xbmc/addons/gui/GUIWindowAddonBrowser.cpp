@@ -19,6 +19,7 @@
 #include "addons/AddonManager.h"
 #include "addons/AddonSystemSettings.h"
 #include "addons/IAddon.h"
+#include "addons/addoninfo/AddonInfo.h"
 #include "addons/RepositoryUpdater.h"
 #include "addons/addoninfo/AddonType.h"
 #include "dialogs/GUIDialogBusy.h"
@@ -621,6 +622,44 @@ int CGUIWindowAddonBrowser::SelectAddonID(const std::vector<AddonType>& types,
         // if the addon is disabled we need to enable it
         if (CServiceBroker::GetAddonMgr().IsAddonDisabled(addon->ID()))
           CServiceBroker::GetAddonMgr().EnableAddon(addon->ID());
+      }
+    }
+
+    // Install missing non-optional dependencies for already-installed addons
+    // (e.g. a bundled skin whose dependencies are in a repository).
+    {
+      AddonPtr selectedAddon;
+      if (CServiceBroker::GetAddonMgr().GetAddon(item->GetPath(), selectedAddon,
+                                                  AddonType::UNKNOWN, OnlyEnabled::CHOICE_NO))
+      {
+        std::vector<std::string> missingDeps;
+        for (const auto& dep : selectedAddon->GetDependencies())
+        {
+          if (!dep.optional && !CServiceBroker::GetAddonMgr().IsAddonInstalled(dep.id))
+            missingDeps.push_back(dep.id);
+        }
+
+        if (!missingDeps.empty())
+        {
+          // Install all missing deps with a single busy dialog to avoid
+          // multiple modal dialogs breaking the input/dialog stack.
+          class CInstallDeps : public IRunnable
+          {
+          public:
+            explicit CInstallDeps(std::vector<std::string> deps) : m_deps(std::move(deps)) {}
+            void Run() override
+            {
+              for (const auto& id : m_deps)
+                CAddonInstaller::GetInstance().InstallOrUpdate(
+                    id, BackgroundJob::CHOICE_NO, ModalJob::CHOICE_NO);
+            }
+
+          private:
+            std::vector<std::string> m_deps;
+          } installer(std::move(missingDeps));
+
+          CGUIDialogBusy::Wait(&installer, 100, false);
+        }
       }
     }
 

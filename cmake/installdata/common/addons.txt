@@ -23,6 +23,7 @@ addons/metadata.generic.artists/*
 addons/metadata.local/*
 addons/metadata.themoviedb.org.python/*
 addons/metadata.tvshows.themoviedb.org.python/*
+addons/repository.jurialmunkey/*
 addons/repository.xbmc.org/*
 addons/resource.images.weathericons.default/*
 addons/resource.language.en_gb/*
@@ -32,6 +33,7 @@ addons/screensaver.xbmc.builtin.dim/*
 addons/script.module.pil/*
 addons/script.module.pycryptodome/*
 addons/service.xbmc.versioncheck/*
+addons/skin.arctic.fuse.2/*
 addons/webinterface.default/*
 addons/xbmc.addon/metadata.xsd
 addons/xbmc.addon/repository.xsd

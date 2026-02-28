@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<window>
+
+    <defaultcontrol always="true">120</defaultcontrol>
+    <include content="Action_OSD_SuspendAutoClose">
+        <param name="window">DialogSubtitles.xml</param>
+    </include>
+    <controls>
+
+        <include>Dialog_Dim_Overlay</include>
+
+        <control type="group">
+            <include>Dimension_DialogHugeMenu</include>
+            <include>Animation_Right_Delay</include>
+
+            <include content="Dialog_Foreground_Side">
+                <param name="dialog_size">Dimension_DialogHugeMenu</param>
+                <param name="subline">false</param>
+            </include>
+
+            <control type="image">
+                <bottom>160</bottom>
+                <height>1</height>
+                <left>80</left>
+                <right>80</right>
+                <texture colordiffuse="$VAR[Color_DialogBorder]">common/white.png</texture>
+            </control>
+
+            <control type="group">
+                <!-- Header -->
+                <include content="Dialog_Head">
+                    <param name="id">100</param>
+                </include>
+                <include>Dialog_Manage_Head_Button</include>
+
+                <!-- Content -->
+                <control type="group" id="8000">
+                    <bottom>160</bottom>
+                    <include>Dimension_Dialog_Body</include>
+
+                    <include content="List_DialogSelect">
+                        <param name="id">120</param>
+                        <param name="itemlayout_include">Layout_DialogSubtitles</param>
+                        <param name="item_height">120</param>
+                        <param name="textcolor">dialog_fg</param>
+                        <onright>61</onright>
+                        <pagecontrol>61</pagecontrol>
+                        <include>Dimension_Dialog_Body_Group</include>
+                    </include>
+
+                    <include content="Dialog_Scrollbar">
+                        <param name="id">61</param>
+                        <onleft>120</onleft>
+                        <onright>9898</onright>
+                    </include>
+
+                    <include content="Dialog_InfoText">
+                        <param name="label">$INFO[Player.FileName,,[CR]]$INFO[Control.GetLabel(140)]$INFO[Control.GetLabel(130), - ,]</param>
+                        <param name="include_hintlabel">true</param>
+                    </include>
+
+
+                </control>
+
+
+            </control>
+
+        </control>
+
+        <include content="Object_Hidden_List">
+            <param name="id">150</param>
+            <onright>120</onright>
+            <onleft>120</onleft>
+            <onup>120</onup>
+            <ondown>120</ondown>
+        </include>
+
+        <control type="image" id="110" description="Service Logo">
+            <visible>false</visible>
+        </control>
+
+        <control type="label" id="130" description="Textbox">
+            <visible>false</visible>
+        </control>
+
+        <control type="label" id="140" description="Textbox">
+            <visible>false</visible>
+        </control>
+
+        <include content="Dialog_Manage">
+            <param name="onback">120</param>
+            <param name="include">Items_DialogSubtitles</param>
+        </include>
+
+    </controls>
+</window>

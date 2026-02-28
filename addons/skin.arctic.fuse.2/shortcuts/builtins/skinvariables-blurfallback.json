@@ -1,0 +1,22 @@
+{
+    "infolabels": {
+        "picture_path": "Container(99972).ListItem.PicturePath",
+        "background_image": "Skin.String(Background.Image)"
+    },
+    "values": {
+        "blur_image": [
+            {
+                "rules": ["{picture_path}!="],
+                "value": "{picture_path}"
+            },
+            {
+                "rules": ["{background_image}!="],
+                "value": "{background_image}"
+            },
+            "special://skin/extras/backgrounds/blur/purple_blur.jpg"
+        ]
+    },
+    "actions": [
+        "SetProperty(TMDbHelper.Blur.Fallback,{blur_image},Home)"
+    ]
+}

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<window type="dialog" id="1118">
+
+    <defaultcontrol always="true">8000</defaultcontrol>
+    <onload>SetProperty(TMDbHelper.ContextMenu,True)</onload>
+    <controls>
+
+        <include>Dialog_Dim_Overlay</include>
+
+        <control type="group">
+            <include>Dimension_DialogWideMenu</include>
+            <include>Animation_Right_Delay</include>
+
+            <include content="Dialog_Foreground_Side">
+                <param name="dialog_size">Dimension_DialogWideMenu</param>
+            </include>
+
+            <control type="group">
+
+                <!-- Header -->
+                <include content="Dialog_Head">
+                    <param name="id">7000</param>
+                    <param name="label">$INFO[Window(Home).Property(CustomDialogSettingsTitle)]</param>
+                </include>
+                <include>Dialog_Head_CloseButton</include>
+
+                <!-- Content -->
+                <control type="group">
+                    <include>Dimension_Dialog_Body</include>
+                    <control type="group">
+                        <include>Dimension_Dialog_Body_Group</include>
+                        <control type="grouplist" id="8000">
+                            <onright>61</onright>
+                            <pagecontrol>61</pagecontrol>
+                            <include>Items_Settings_CustomDialog</include>
+                        </control>
+                        <control type="group">
+                            <height>40</height>
+                            <right>20</right>
+                            <bottom>-60</bottom>
+                            <include content="Dialog_ItemPage">
+                                <param name="id">8000</param>
+                            </include>
+                        </control>
+                    </control>
+                    <include content="Dialog_Scrollbar">
+                        <param name="id">61</param>
+                        <onleft>8000</onleft>
+                        <onright>9000</onright>
+                    </include>
+                </control>
+            </control>
+
+        </control>
+    </controls>
+</window>

@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<window>
+
+    <include content="Action_OSD_SuspendAutoClose">
+        <param name="window">DialogSettings.xml</param>
+    </include>
+    <controls>
+
+
+
+        <!-- Default Buttons -->
+        <include content="Settings_Button">
+            <param name="id">7</param>
+            <param name="control">button</param>
+            <param name="dialog">true</param>
+            <description>Default Setting Button</description>
+        </include>
+
+        <include content="Settings_Button">
+            <param name="id">8</param>
+            <param name="control">radiobutton</param>
+            <param name="dialog">true</param>
+            <description>Default Setting Button</description>
+        </include>
+
+        <include content="Settings_Button">
+            <param name="id">9</param>
+            <param name="control">spincontrolex</param>
+            <param name="dialog">true</param>
+            <description>Default Setting Button</description>
+        </include>
+
+        <include content="Settings_Button">
+            <param name="id">11</param>
+            <param name="control">image</param>
+            <param name="dialog">true</param>
+            <description>Default Setting Button</description>
+            <visible>false</visible>
+        </include>
+
+        <include content="Settings_Button">
+            <param name="id">12</param>
+            <param name="control">edit</param>
+            <param name="dialog">true</param>
+            <description>Default Setting Button</description>
+        </include>
+
+        <include content="Settings_Button">
+            <param name="id">13</param>
+            <param name="control">sliderex</param>
+            <param name="dialog">true</param>
+            <description>Default Setting Button</description>
+        </include>
+
+        <include content="Settings_Label">
+            <param name="id">14</param>
+            <param name="control">label</param>
+            <param name="dialog">true</param>
+            <description>Default Setting Label</description>
+        </include>
+
+        <!-- Hidden Buttons -->
+        <include content="Object_Hidden_Button">
+            <param name="id">28</param>
+        </include>
+        <include content="Object_Hidden_Button">
+            <param name="id">29</param>
+        </include>
+        <include content="Object_Hidden_Button">
+            <param name="id">30</param>
+        </include>
+
+        <!-- Hidden Control -->
+        <include content="Object_Hidden_Button">
+            <param name="id">8000</param>
+            <onleft>Control.Message(52,movedown,10025)</onleft>
+            <onright>Control.Message(52,moveup,10025)</onright>
+            <ondown>Control.Message(52,moveup,10025)</ondown>
+            <ondown>Control.Message(52,moveup,10025)</ondown>
+            <ondown>Control.Message(52,moveup,10025)</ondown>
+            <ondown>Control.Message(52,moveup,10025)</ondown>
+            <onup>Control.Message(52,movedown,10025)</onup>
+            <onup>Control.Message(52,movedown,10025)</onup>
+            <onup>Control.Message(52,movedown,10025)</onup>
+            <onup>Control.Message(52,movedown,10025)</onup>
+            <onclick>SendClick(28)</onclick>
+            <onback>5</onback>
+        </include>
+
+        <include content="Dialog_Dim_Overlay">
+            <param name="visible">!Window.IsVisible(DialogSlider.xml)</param>
+        </include>
+
+        <control type="group">
+            <include>Animation_Right_Delay</include>
+            <visible>!Window.IsVisible(DialogSlider.xml)</visible>
+            <control type="group">
+                <include>Dimension_DialogWideMenu</include>
+
+
+                <include content="Dialog_Foreground_Side">
+                    <param name="dialog_size">Dimension_DialogWideMenu</param>
+                </include>
+
+                <control type="group">
+                    <!-- Header -->
+                    <include content="Dialog_Head">
+                        <param name="id">2</param>
+                    </include>
+                    <include>Dialog_Manage_Head_Button</include>
+
+                    <!-- Content -->
+                    <control type="group">
+                        <include>Dimension_Dialog_Body</include>
+                        <control type="grouplist" id="5">
+                            <include>Dimension_Dialog_Body_Group</include>
+                            <onright>61</onright>
+                            <pagecontrol>61</pagecontrol>
+                        </control>
+                        <include content="Dialog_Scrollbar">
+                            <param name="id">61</param>
+                            <onleft>5</onleft>
+                            <onright>9898</onright>
+                        </include>
+                    </control>
+                </control>
+
+            </control>
+
+        </control>
+        <include content="Dialog_Manage">
+            <param name="onback">5</param>
+            <param name="include">Items_DialogSettings</param>
+        </include>
+    </controls>
+</window>

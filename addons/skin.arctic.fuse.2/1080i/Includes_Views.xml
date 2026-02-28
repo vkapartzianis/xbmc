@@ -1,0 +1,1079 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<includes>
+    <include name="View_MediaWindows_ID">
+        <views>50,51,52,53,54,57,58,59,500,510,520,530,540,560,570,580,590,502,512,522,532,542,572,582,592,550,551,552,553,554,555,561,557,558</views>
+    </include>
+
+    <include name="View_Row_Header">
+        <definition>
+            <control type="group">
+                <include content="Furniture_Top_Left">
+                    <param name="label">$PARAM[label]</param>
+                </include>
+            </control>
+        </definition>
+    </include>
+
+    <include name="View_Dialog_Plot">
+        <param name="visible">Window.IsActive(1113)</param>
+        <definition>
+            <include content="DialogInfo_PlotBox">
+                <param name="visible">$PARAM[visible]</param>
+                <param name="scrollbar_fakefocus">true</param>
+                <param name="include_movement">Items_Null</param>
+                <param name="include_buttons">Items_Null</param>
+                <param name="include_buttons_condition">false</param>
+                <param name="dialog_size">Dimension_DialogHugeMenu</param>
+            </include>
+        </definition>
+    </include>
+
+    <include name="View_Hidden_Buttons">
+        <!-- Dummy for bouncing focus back to view on back -->
+        <include content="Object_Hidden_Button">
+            <param name="id">62</param>
+            <onfocus>SetFocus($VAR[Action_View_ContentID])</onfocus>
+        </include>
+        <include content="Object_Hidden_Button">
+            <param name="id">63</param>
+            <onfocus>SetFocus(50)</onfocus>
+        </include>
+
+        <include content="Object_Hidden_Button">
+            <param name="id">610</param>
+            <onup>50</onup>
+            <ondown>SetFocus(600,$VAR[Action_View_Filter_Focus],absolute)</ondown>
+            <onback>50</onback>
+            <onleft>SetFocus(50)</onleft>
+            <onleft>Action(PrevLetter)</onleft>
+            <onleft>SetFocus(610)</onleft>
+            <onright>SetFocus(50)</onright>
+            <onright>Action(NextLetter)</onright>
+            <onright>SetFocus(610)</onright>
+            <onfocus condition="!$EXP[Exp_IsAlphabetStrip] + !Integer.IsEqual(Container.NumPages,1)">SetFocus(60)</onfocus>
+            <onfocus condition="Integer.IsEqual(Container.NumPages,1) + String.IsEmpty(Control.GetLabel(19).index(1))">SetFocus(8000)</onfocus>
+            <onfocus condition="Integer.IsEqual(Container.NumPages,1) + !String.IsEmpty(Control.GetLabel(19).index(1))">SetFocus(600,$VAR[Action_View_Filter_Focus],absolute)</onfocus>
+        </include>
+
+        <include content="Object_Hidden_Button">
+            <param name="id">611</param>
+            <onleft>50</onleft>
+            <onright>SetFocus(8000)</onright>
+            <onback>50</onback>
+            <onup>SetFocus(50)</onup>
+            <onup>Action(PrevLetter)</onup>
+            <onup>SetFocus(611)</onup>
+            <ondown>SetFocus(50)</ondown>
+            <ondown>Action(NextLetter)</ondown>
+            <ondown>SetFocus(611)</ondown>
+            <onfocus condition="!$EXP[Exp_IsAlphabetStrip] + !Integer.IsEqual(Container.NumPages,1) + $EXP[Exp_View_Scrollbar_Mini_V]">SetFocus(64)</onfocus>
+            <onfocus condition="!$EXP[Exp_IsAlphabetStrip] + !Integer.IsEqual(Container.NumPages,1) + $EXP[Exp_View_Scrollbar_Midi_V]">SetFocus(65)</onfocus>
+            <onfocus condition="!$EXP[Exp_IsAlphabetStrip] + !Integer.IsEqual(Container.NumPages,1) + $EXP[Exp_View_Scrollbar_Maxi_V]">SetFocus(66)</onfocus>
+            <onfocus condition="Integer.IsEqual(Container.NumPages,1) + String.IsEmpty(Control.GetLabel(19).index(1))">SetFocus(8000)</onfocus>
+            <onfocus condition="Integer.IsEqual(Container.NumPages,1) + !String.IsEmpty(Control.GetLabel(19).index(1))">SetFocus(600,$VAR[Action_View_Filter_Focus],absolute)</onfocus>
+        </include>
+    </include>
+
+    <include name="View_Row_Info">
+        <control type="group">
+            <visible>!Integer.IsEqual(Container.NumItems,0)</visible>
+
+            <control type="group">
+                <visible>$EXP[Exp_View_HasHeader]</visible>
+                <include>Furniture_Top_Left</include>
+                <control type="group">
+                    <include content="Info_Viewline">
+                        <param name="top">170</param>
+                    </include>
+                </control>
+            </control>
+
+            <control type="group">
+                <visible>Control.IsVisible(558)</visible>
+                <control type="group">
+                    <top>660</top>
+                    <right>view_pad</right>
+                    <width>1040</width>
+                    <include content="Info_Panel">
+                        <param name="visible">String.IsEmpty(Window.Property(TMDBHelper.WidgetContainer))</param>
+                        <param name="grouplistid">99954</param>
+                        <param name="plotheight">120</param>
+                        <param name="plotwidth">1040</param>
+                        <param name="title">false</param>
+                    </include>
+                </control>
+                <control type="group">
+                    <right>view_pad</right>
+                    <top>view_pad</top>
+                    <!-- <bottom>180</bottom> -->
+                    <width>1040</width>
+                    <height>585</height>
+                    <control type="group">
+                        <include content="Object_BigPoster">
+                            <param name="icon">$VAR[Image_Landscape]</param>
+                            <param name="diffuse">diffuse/landscape_w1040_h585.png</param>
+                        </include>
+                    </control>
+                </control>
+            </control>
+
+            <control type="group">
+                <visible>$EXP[Exp_View_HasIndent]</visible>
+                <control type="group">
+                    <include>Dimension_Info</include>
+                    <include>View_MediaListOverview_Artwork</include>
+                </control>
+                <control type="group">
+                    <right>infodialog_left_w</right>
+                    <control type="group">
+                        <visible>Control.IsVisible(552)</visible>
+                        <include content="Info_Viewline">
+                            <param name="top">280</param>
+                        </include>
+                    </control>
+
+                    <control type="group">
+                        <visible>Control.IsVisible(550)</visible>
+                        <include content="Info_Viewline">
+                            <param name="top">440</param>
+                        </include>
+                    </control>
+
+                    <control type="group">
+                        <visible>Control.IsVisible(550) | Control.IsVisible(552)</visible>
+                        <control type="group">
+                            <include>Info_Panel_Dimensions</include>
+                            <include content="Info_Panel">
+                                <param name="visible">String.IsEmpty(Window.Property(TMDBHelper.WidgetContainer))</param>
+                                <param name="grouplistid">99953</param>
+                                <param name="plotwidth">90%</param>
+                                <param name="plotheight">80</param>
+                                <param name="details">![Control.IsVisible(552)]</param>
+                            </include>
+                        </control>
+                    </control>
+                </control>
+            </control>
+
+            <control type="group">
+                <visible>!$EXP[Exp_View_HasHeader]</visible>
+                <visible>!$EXP[Exp_View_HasIndent]</visible>
+                <control type="group">
+                    <visible>![Control.IsVisible(553) | Control.IsVisible(554) | Control.IsVisible(557) | Control.IsVisible(558)]</visible>
+                    <include content="Info_Viewline">
+                        <param name="use_spinner">true</param>
+                        <param name="run_spinner">[[Control.IsVisible(502) + Container(503).IsUpdating] | [Control.IsVisible(512) + Container(513).IsUpdating] | [Control.IsVisible(522) + Container(523).IsUpdating] | [Control.IsVisible(532) + Container(533).IsUpdating] | [Control.IsVisible(542) + Container(543).IsUpdating] | [Control.IsVisible(572) + Container(573).IsUpdating] | [Control.IsVisible(582) + Container(583).IsUpdating] | [Control.IsVisible(592) + Container(593).IsUpdating]]</param>
+                    </include>
+                </control>
+                <control type="group">
+                    <visible>[Control.IsVisible(553) | Control.IsVisible(554) | Control.IsVisible(557) | Control.IsVisible(558)]</visible>
+                    <include content="Info_Viewline">
+                        <param name="top">280</param>
+                        <param name="use_spinner">true</param>
+                        <param name="run_spinner">[[Control.IsVisible(553) + Container(553).IsUpdating] | [Control.IsVisible(554) + Container(554).IsUpdating] | [Control.IsVisible(557) + Container(557).IsUpdating] | [Control.IsVisible(558) + Container(558).IsUpdating]]</param>
+                    </include>
+                </control>
+                <control type="group">
+                    <include>Info_Panel_Dimensions</include>
+                    <include content="Info_Panel">
+                        <param name="visible">String.IsEmpty(Window.Property(TMDBHelper.WidgetContainer))</param>
+                        <param name="details">![Control.IsVisible(553) | Control.IsVisible(554) | Control.IsVisible(557) | Control.IsVisible(558)]</param>
+                    </include>
+                    <include>View_Combined_Info_Panel</include>
+                </control>
+            </control>
+        </control>
+    </include>
+
+    <include name="View_Row_Items_CombinedViews">
+        <include condition="$EXP[Exp_View_502_Include]">View_502_Square_Combined_Row</include>
+        <include condition="$EXP[Exp_View_512_Include]">View_512_Landscape_Combined_Row</include>
+        <include condition="$EXP[Exp_View_522_Include]">View_522_Poster_Combined_Row</include>
+        <include condition="$EXP[Exp_View_532_Include]">View_532_Circle_Combined_Row</include>
+        <include condition="$EXP[Exp_View_542_Include]">View_542_Card_Combined_Row</include>
+        <include condition="$EXP[Exp_View_572_Include]">View_572_Board_Combined_Row</include>
+        <include condition="$EXP[Exp_View_582_Include]">View_582_Quad_Combined_Row</include>
+        <include condition="$EXP[Exp_View_592_Include]">View_592_Disc_Combined_Row</include>
+    </include>
+
+    <include name="View_Row_Items_StandardViews">
+        <include condition="$EXP[Exp_View_50_Include]">View_050_Square_Row</include>
+        <include condition="$EXP[Exp_View_51_Include]">View_051_Landscape_Row</include>
+        <include condition="$EXP[Exp_View_52_Include]">View_052_Poster_Row</include>
+        <include condition="$EXP[Exp_View_53_Include]">View_053_Circle_Row</include>
+        <include condition="$EXP[Exp_View_54_Include]">View_054_Card_Row</include>
+        <include condition="$EXP[Exp_View_57_Include]">View_057_Board_Row</include>
+        <include condition="$EXP[Exp_View_58_Include]">View_058_Quad_Row</include>
+        <include condition="$EXP[Exp_View_59_Include]">View_059_Disc_Row</include>
+        <include condition="$EXP[Exp_View_550_Include]">View_550_MediaList</include>
+        <include condition="$EXP[Exp_View_551_Include]">View_551_Landscape_MediaList</include>
+        <include condition="$EXP[Exp_View_552_Include]">View_552_Information_MediaList</include>
+        <include condition="$EXP[Exp_View_553_Include]">View_553_Basic_MediaList</include>
+        <include condition="$EXP[Exp_View_554_Include]">View_554_Combo_MediaList</include>
+        <include condition="$EXP[Exp_View_557_Include]">View_557_Broad_MediaList</include>
+        <include condition="$EXP[Exp_View_558_Include]">View_558_Info_MediaList</include>
+        <include condition="$EXP[Exp_View_500_Include]">View_500_Square_Wall</include>
+        <include condition="$EXP[Exp_View_510_Include]">View_510_Landscape_Wall</include>
+        <include condition="$EXP[Exp_View_520_Include]">View_520_Poster_Wall</include>
+        <include condition="$EXP[Exp_View_530_Include]">View_530_Circle_Wall</include>
+        <include condition="$EXP[Exp_View_540_Include]">View_540_Overview_Wall</include>
+        <include condition="$EXP[Exp_View_560_Include]">View_560_Ring_Wall</include>
+        <include condition="$EXP[Exp_View_570_Include]">View_570_Board_Wall</include>
+        <include condition="$EXP[Exp_View_580_Include]">View_580_Quad_Wall</include>
+        <include condition="$EXP[Exp_View_590_Include]">View_590_Disc_Wall</include>
+        <include condition="$EXP[Exp_View_561_Include]">View_561_Banner_Wall</include>
+    </include>
+
+    <include name="View_Row_Items_FavouritesViews">
+        <include content="View_Row_Include">
+            <param name="id">50</param>
+            <param name="include">List_Square_Row</param>
+            <param name="viewtype_label">$LOCALIZE[31113]</param>
+            <param name="visible">True</param>
+        </include>
+    </include>
+
+    <include name="View_Row_Items">
+        <param name="include_combinedviews">View_Row_Items_CombinedViews</param>
+        <param name="include_standardviews">View_Row_Items_StandardViews</param>
+        <definition>
+            <control type="group">
+                <include>$PARAM[include_combinedviews]</include>
+                <control type="group">
+                    <include>$PARAM[include_standardviews]</include>
+                </control>
+            </control>
+        </definition>
+    </include>
+
+    <include name="View_Furniture_Bottom_ViewLine">
+        <param name="fade_condition">true</param>
+        <definition>
+            <control type="group">
+                <visible>$PARAM[visible]</visible>
+                <animation effect="fade" start="100" end="30" condition="$PARAM[fade_condition]">Conditional</animation>
+                <include content="Info_Viewline">
+                    <param name="label">$PARAM[label]</param>
+                    <param name="align">$PARAM[align]</param>
+                    <param name="haspath">$PARAM[haspath]</param>
+                    <param name="use_highlight">$PARAM[use_highlight]</param>
+                    <param name="top">10</param>
+                    <param name="left">0</param>
+                    <param name="right">0</param>
+                    <param name="textcolor">$PARAM[textcolor]</param>
+                </include>
+            </control>
+        </definition>
+    </include>
+
+    <include name="View_Furniture_Bottom">
+        <control type="group">
+            <include>View_Combined_Row_Horz_Selector</include>
+            <control type="group">
+                <visible>$EXP[Exp_FurnitureFooter_Left_IsVisible]</visible>
+                <include>Furniture_Bottom_Left</include>
+            </control>
+
+            <!-- Scroll Bar -->
+            <control type="group">
+                <include>Dimension_Bottombar</include>
+                <control type="group">
+                    <include>Dimension_Furniture_Gutters</include>
+                    <include>View_Sorting_Buttons</include>
+                    <include>View_Scrollbar_Count</include>
+                    <include>View_Scrollbar_Strip</include>
+                    <include>View_Alphabet_Filter</include>
+                    <include>View_Hint_Text</include>
+                </control>
+            </control>
+        </control>
+    </include>
+
+    <include name="View_Sorting_Buttons">
+        <param name="itemgap">-40</param>
+        <param name="include_customwidth">true</param>
+        <param name="include_hintlabel">true</param>
+        <definition>
+            <control type="grouplist" id="8000">
+                <orientation>horizontal</orientation>
+                <height>160</height>
+                <centertop>50%</centertop>
+                <align>center</align>
+                <right>0</right>
+                <onup>50</onup>
+                <onback>50</onback>
+                <ondown>SetProperty(List.ViewContainer,8000)</ondown>
+                <ondown>SetFocus(330)</ondown>
+
+                <hitrect x="0" y="0" w="0" h="0" />
+
+                <visible allowhiddenfocus="true">$EXP[Exp_View_SortModeButtons_HasFocus]</visible>
+
+                <!-- View -->
+                <include content="DialogInfo_Button" condition="!Window.IsVisible(MyPlaylist.xml)">
+                    <param name="vertical">false</param>
+                    <param name="width">300</param>
+                    <param name="slice">100</param>
+                    <param name="label_pad">-15</param>
+                    <param name="id">8001</param>
+                    <param name="groupid">8101</param>
+                    <param name="sliceid">8201</param>
+                    <param name="label">$LOCALIZE[31319]</param>
+                    <param name="icon">special://skin/extras/icons/table.png</param>
+                    <param name="itemgap">0</param>
+                    <param name="visible">true</param>
+                    <param name="include_hintlabel">$PARAM[include_hintlabel]</param>
+                    <param name="include_customwidth">$PARAM[include_customwidth]</param>
+                    <hitrect x="0" y="0" w="0" h="0" />
+                    <onclick>Runscript(script.skinvariables,action=buildviews,contentid=$VAR[Items_ViewMode_Switch],pluginname=$INFO[Container.PluginName])</onclick>
+                </include>
+
+                <!-- Sort -->
+                <include content="DialogInfo_Button" condition="!Window.IsVisible(MyPlaylist.xml)">
+                    <param name="vertical">false</param>
+                    <param name="width">300</param>
+                    <param name="slice">100</param>
+                    <param name="label_pad">-15</param>
+                    <param name="id">8003</param>
+                    <param name="groupid">8103</param>
+                    <param name="sliceid">8203</param>
+                    <param name="label">$VAR[Label_SortMethod]</param>
+                    <param name="icon">special://skin/extras/icons/list-ul.png</param>
+                    <param name="itemgap">$PARAM[itemgap]</param>
+                    <param name="visible">true</param>
+                    <param name="include_hintlabel">$PARAM[include_hintlabel]</param>
+                    <param name="include_customwidth">$PARAM[include_customwidth]</param>
+                    <hitrect x="0" y="0" w="0" h="0" />
+                    <onclick>SetProperty(DialogSelectType,Menu,Home)</onclick>
+                    <onclick condition="![String.IsEqual(Container.FolderName,Skin Variables) + !String.IsEmpty(Window.Property(MediaFilter.BaseDir.Name))]">SendClick(3)</onclick>
+                    <onclick condition="String.IsEqual(Container.FolderName,Skin Variables) + !String.IsEmpty(Window.Property(MediaFilter.BaseDir.Name))">RunScript(script.skinvariables,run_dialog=select,heading=$LOCALIZE[581],separator=||,list=title||genre||year||rating||playcount||director||originaltitle||lastplayed||writer||studio||mpaa||country||premiered||top250||votes,"executebuiltin=SetProperty(MediaFilter.SortBy,{v})||route=run_executebuiltin=special://skin/shortcuts/builtins/skinvariables-mediafilter.json&amp;use_rules=True")</onclick>
+                </include>
+
+                <!-- Order -->
+                <include content="DialogInfo_Button" condition="!Window.IsVisible(MyPlaylist.xml)">
+                    <param name="vertical">false</param>
+                    <param name="width">300</param>
+                    <param name="slice">100</param>
+                    <param name="label_pad">-15</param>
+                    <param name="id">8002</param>
+                    <param name="groupid">8102</param>
+                    <param name="sliceid">8202</param>
+                    <param name="label">$LOCALIZE[31015]</param>
+                    <param name="icon">$VAR[Image_SortDirection]</param>
+                    <param name="itemgap">$PARAM[itemgap]</param>
+                    <param name="visible">true</param>
+                    <param name="include_hintlabel">$PARAM[include_hintlabel]</param>
+                    <param name="include_customwidth">$PARAM[include_customwidth]</param>
+                    <hitrect x="0" y="0" w="0" h="0" />
+                    <onclick>SetProperty(DialogSelectType,Menu,Home)</onclick>
+                    <onclick condition="![String.IsEqual(Container.FolderName,Skin Variables) + !String.IsEmpty(Window.Property(MediaFilter.BaseDir.Name))]">SendClick(4)</onclick>
+
+                    <onclick condition="!String.IsEqual(Window.Property(MediaFilter.SortHow),desc) + String.IsEqual(Container.FolderName,Skin Variables) + !String.IsEmpty(Window.Property(MediaFilter.BaseDir.Name))">SetProperty(MediaFilter.SortHow,desc)</onclick>
+                    <onclick condition="String.IsEqual(Window.Property(MediaFilter.SortHow),desc) + String.IsEqual(Container.FolderName,Skin Variables) + !String.IsEmpty(Window.Property(MediaFilter.BaseDir.Name))">ClearProperty(MediaFilter.SortHow)</onclick>
+
+                    <onclick condition="String.IsEqual(Container.FolderName,Skin Variables) + !String.IsEmpty(Window.Property(MediaFilter.BaseDir.Name))">RunScript(script.skinvariables,"run_executebuiltin=special://skin/shortcuts/builtins/skinvariables-mediafilter.json",use_rules)</onclick>
+                </include>
+
+                <!-- Watched -->
+                <include content="DialogInfo_Button" condition="!Window.IsVisible(MyPlaylist.xml)">
+                    <param name="vertical">false</param>
+                    <param name="width">300</param>
+                    <param name="slice">100</param>
+                    <param name="label_pad">-15</param>
+                    <param name="id">8004</param>
+                    <param name="groupid">8104</param>
+                    <param name="sliceid">8204</param>
+                    <param name="label">$VAR[Label_Watched]</param>
+                    <param name="icon">$VAR[Image_Watched]</param>
+                    <param name="itemgap">$PARAM[itemgap]</param>
+                    <param name="visible">true</param>
+                    <param name="include_hintlabel">$PARAM[include_hintlabel]</param>
+                    <param name="include_customwidth">$PARAM[include_customwidth]</param>
+                    <hitrect x="0" y="0" w="0" h="0" />
+                    <onclick>SendClick(14)</onclick>
+                </include>
+
+                <!-- Filter -->
+                <include content="DialogInfo_Button" condition="!Window.IsVisible(MyPlaylist.xml)">
+                    <param name="vertical">false</param>
+                    <param name="width">300</param>
+                    <param name="slice">100</param>
+                    <param name="label_pad">-15</param>
+                    <param name="id">8005</param>
+                    <param name="groupid">8105</param>
+                    <param name="sliceid">8205</param>
+                    <param name="label">$LOCALIZE[587]</param>
+                    <param name="icon">$VAR[Image_Filtered]</param>
+                    <param name="itemgap">$PARAM[itemgap]</param>
+                    <param name="visible">Container.CanFilterAdvanced</param>
+                    <param name="include_hintlabel">$PARAM[include_hintlabel]</param>
+                    <param name="include_customwidth">$PARAM[include_customwidth]</param>
+                    <hitrect x="0" y="0" w="0" h="0" />
+                    <onclick>Filter</onclick>
+                </include>
+
+                <!-- Update Library -->
+                <include content="DialogInfo_Button" condition="!Window.IsVisible(MyPlaylist.xml)">
+                    <param name="vertical">false</param>
+                    <param name="width">300</param>
+                    <param name="slice">100</param>
+                    <param name="label_pad">-15</param>
+                    <param name="id">8006</param>
+                    <param name="groupid">8106</param>
+                    <param name="sliceid">8206</param>
+                    <param name="label">$VAR[Label_UpdateLibrary]</param>
+                    <param name="icon">special://skin/extras/icons/update.png</param>
+                    <param name="itemgap">$PARAM[itemgap]</param>
+                    <param name="visible">!Container.Content(addons) + String.IsEmpty(Container.PluginName) + [Window.IsVisible(videos) | Window.IsVisible(music)]</param>
+                    <param name="include_hintlabel">$PARAM[include_hintlabel]</param>
+                    <param name="include_customwidth">$PARAM[include_customwidth]</param>
+                    <hitrect x="0" y="0" w="0" h="0" />
+                    <onclick>SetFocus(50)</onclick>
+                    <onclick condition="Window.IsVisible(videos)">UpdateLibrary(video)</onclick>
+                    <onclick condition="Window.IsVisible(music)">UpdateLibrary(music)</onclick>
+                </include>
+
+                <!-- Addon Settings -->
+                <include content="DialogInfo_Button" condition="!Window.IsVisible(MyPlaylist.xml)">
+                    <param name="vertical">false</param>
+                    <param name="width">300</param>
+                    <param name="slice">100</param>
+                    <param name="label_pad">-15</param>
+                    <param name="id">8007</param>
+                    <param name="groupid">8107</param>
+                    <param name="sliceid">8207</param>
+                    <param name="label">$LOCALIZE[5]</param>
+                    <param name="icon">special://skin/extras/icons/settings.png</param>
+                    <param name="itemgap">$PARAM[itemgap]</param>
+                    <param name="visible">!String.IsEmpty(Container.PluginName)</param>
+                    <param name="include_hintlabel">$PARAM[include_hintlabel]</param>
+                    <param name="include_customwidth">$PARAM[include_customwidth]</param>
+                    <hitrect x="0" y="0" w="0" h="0" />
+                    <onclick>Addon.OpenSettings($INFO[Container.PluginName])</onclick>
+                </include>
+
+                <!-- Shuffle -->
+                <include content="DialogInfo_Button"  condition="Window.IsVisible(MyPlaylist.xml)">
+                    <param name="vertical">false</param>
+                    <param name="width">300</param>
+                    <param name="slice">100</param>
+                    <param name="label_pad">-15</param>
+                    <param name="id">20</param>
+                    <param name="groupid">8120</param>
+                    <param name="sliceid">8220</param>
+                    <param name="label">$LOCALIZE[191]</param>
+                    <param name="icon">$VAR[Image_OSD_Shuffle]</param>
+                    <param name="itemgap">$PARAM[itemgap]</param>
+                    <param name="include_hintlabel">$PARAM[include_hintlabel]</param>
+                    <param name="include_customwidth">$PARAM[include_customwidth]</param>
+                    <hitrect x="0" y="0" w="0" h="0" />
+                </include>
+
+                <!-- Repeat -->
+                <include content="DialogInfo_Button"  condition="Window.IsVisible(MyPlaylist.xml)">
+                    <param name="vertical">false</param>
+                    <param name="width">300</param>
+                    <param name="slice">100</param>
+                    <param name="label_pad">-15</param>
+                    <param name="id">26</param>
+                    <param name="groupid">8126</param>
+                    <param name="sliceid">8226</param>
+                    <param name="label">$LOCALIZE[486]</param>
+                    <param name="icon">$VAR[Image_OSD_Repeat]</param>
+                    <param name="itemgap">$PARAM[itemgap]</param>
+                    <param name="include_hintlabel">$PARAM[include_hintlabel]</param>
+                    <param name="include_customwidth">$PARAM[include_customwidth]</param>
+                    <hitrect x="0" y="0" w="0" h="0" />
+                </include>
+
+                <!-- Save -->
+                <include content="DialogInfo_Button"  condition="Window.IsVisible(MyPlaylist.xml)">
+                    <param name="vertical">false</param>
+                    <param name="width">300</param>
+                    <param name="slice">100</param>
+                    <param name="label_pad">-15</param>
+                    <param name="id">21</param>
+                    <param name="groupid">8121</param>
+                    <param name="sliceid">8221</param>
+                    <param name="label">$LOCALIZE[190]</param>
+                    <param name="icon">special://skin/extras/icons/floppy-disk.png</param>
+                    <param name="itemgap">$PARAM[itemgap]</param>
+                    <param name="include_hintlabel">$PARAM[include_hintlabel]</param>
+                    <param name="include_customwidth">$PARAM[include_customwidth]</param>
+                    <hitrect x="0" y="0" w="0" h="0" />
+                </include>
+
+                <!-- Clear -->
+                <include content="DialogInfo_Button"  condition="Window.IsVisible(MyPlaylist.xml)">
+                    <param name="vertical">false</param>
+                    <param name="width">300</param>
+                    <param name="slice">100</param>
+                    <param name="label_pad">-15</param>
+                    <param name="id">22</param>
+                    <param name="groupid">8122</param>
+                    <param name="sliceid">8222</param>
+                    <param name="label">$LOCALIZE[192]</param>
+                    <param name="icon">special://skin/extras/icons/triangle-exclamation.png</param>
+                    <param name="itemgap">$PARAM[itemgap]</param>
+                    <param name="include_hintlabel">$PARAM[include_hintlabel]</param>
+                    <param name="include_customwidth">$PARAM[include_customwidth]</param>
+                    <hitrect x="0" y="0" w="0" h="0" />
+                </include>
+
+                <!-- Fullscreen -->
+                <include content="DialogInfo_Button">
+                    <param name="vertical">false</param>
+                    <param name="width">300</param>
+                    <param name="slice">100</param>
+                    <param name="label_pad">-15</param>
+                    <param name="id">8008</param>
+                    <param name="groupid">8108</param>
+                    <param name="sliceid">8208</param>
+                    <param name="label">$LOCALIZE[35232]</param>
+                    <param name="icon">special://skin/extras/icons/fullscreen.png</param>
+                    <param name="itemgap">$PARAM[itemgap]</param>
+                    <param name="visible">Player.HasMedia</param>
+                    <param name="include_hintlabel">$PARAM[include_hintlabel]</param>
+                    <param name="include_customwidth">$PARAM[include_customwidth]</param>
+                    <hitrect x="0" y="0" w="0" h="0" />
+                    <onclick>Dialog.Close(all,true)</onclick>
+                    <onclick>Fullscreen</onclick>
+                </include>
+            </control>
+        </definition>
+    </include>
+
+    <include name="View_Scrollbar_Count">
+        <control type="group">
+            <include content="View_Furniture_Bottom_ViewLine">
+                <param name="label">$LOCALIZE[31135]$INFO[Container.CurrentPage, , $LOCALIZE[20163] ]$INFO[Container.NumPages]</param>
+                <param name="visible">$EXP[Exp_View_ScrollFilter_HasFocus]</param>
+                <param name="align">right</param>
+            </include>
+        </control>
+    </include>
+
+    <include name="View_Hint_Text">
+        <control type="group">
+            <left>-80</left>
+            <include content="OSD_CastInfo_HintText">
+                <param name="label">$LOCALIZE[31463]</param>
+                <param name="visible">$EXP[Exp_View_ScrollFilterHorz_HasFocus]</param>
+                <param name="centerbottom">-50</param>
+                <param name="fade_in">false</param>
+                <param name="fade_out">false</param>
+                <param name="arrow_direction">down</param>
+            </include>
+            <include content="OSD_CastInfo_HintText">
+                <param name="label">$LOCALIZE[31464]</param>
+                <param name="visible">$EXP[Exp_View_ScrollFilterVert_HasFocus]</param>
+                <param name="centerbottom">-50</param>
+                <param name="fade_in">false</param>
+                <param name="fade_out">false</param>
+                <param name="arrow_direction">right</param>
+            </include>
+        </control>
+    </include>
+
+    <include name="View_Scrollbar_Strip">
+
+        <control type="group">
+            <!-- <centertop>0</centertop> -->
+            <centertop>50%</centertop>
+            <height>scrollbar_w</height>
+            <left>view_poster_itemlayout_w</left>
+            <right>view_poster_itemlayout_w</right>
+
+            <control type="group">
+                <!-- <left>view_poster_itemlayout_w</left>
+                <right>view_poster_itemlayout_w</right> -->
+                <visible allowhiddenfocus="true">Control.HasFocus(60) | Control.HasFocus(610)</visible>
+                <visible>!$EXP[Exp_View_Scrollbar_Midi_V]</visible>
+                <visible>!$EXP[Exp_View_Scrollbar_Mini_V]</visible>
+                <visible>!$EXP[Exp_View_Scrollbar_Maxi_V]</visible>
+
+                <!-- <control type="image">
+                    <texture border="8,0,8,0" colordiffuse="main_fg_12">scrollbar/scrollh.png</texture>
+                </control> -->
+
+                <control type="scrollbar" id="60">
+                    <orientation>horizontal</orientation>
+                    <!-- <texturesliderbackground /> -->
+                    <texturesliderbackground colordiffuse="main_fg_12" border="4">scrollbar/scrollh_line.png</texturesliderbackground>
+                    <include>Texture_Scrollbar_SliderBar_H</include>
+                    <include>Texture_Scrollbar_H</include>
+                    <onup>50</onup>
+                    <ondown>SetFocus(600,$VAR[Action_View_Filter_Focus],absolute)</ondown>
+                    <onback>50</onback>
+                </control>
+            </control>
+        </control>
+    </include>
+
+    <include name="View_Alphabet_Filter">
+        <param name="id">600</param>
+        <param name="editid">19</param>
+        <param name="autocompleteid">601</param>
+        <definition>
+            <control type="group">
+                <height>80</height>
+                <centertop>50%</centertop>
+
+                <visible allowhiddenfocus="true">Control.HasFocus($PARAM[editid]) | Control.HasFocus($PARAM[id]) | Control.HasFocus($PARAM[autocompleteid])</visible>
+
+                <control type="group">
+                    <height>80</height>
+                    <top>view_line_top</top>
+                    <control type="edit" id="$PARAM[editid]">
+                        <texturefocus />
+                        <texturenofocus />
+                        <description>Search</description>
+                        <font>font_main</font>
+                        <textcolor>00ffffff</textcolor>
+                        <focusedcolor>00ffffff</focusedcolor>
+                        <align>center</align>
+                        <textoffsetx>0</textoffsetx>
+                        <height>40</height>
+                        <top>-20</top>
+                        <onup>50</onup>
+                        <ondown>$PARAM[id]</ondown>
+                        <onback>50</onback>
+                    </control>
+
+                    <control type="label">
+                        <height>40</height>
+                        <top>-40</top>
+                        <font>font_main</font>
+                        <textcolor>main_fg_30</textcolor>
+                        <align>center</align>
+                        <label>[CAPITALIZE]$INFO[Control.GetLabel($PARAM[editid]).index(1)][/CAPITALIZE]</label>
+                    </control>
+
+                    <control type="panel" id="$PARAM[id]">
+                        <orientation>panel</orientation>
+
+                        <width>560</width>
+                        <centerleft>50%</centerleft>
+                        <onup>50</onup>
+                        <ondown>$PARAM[autocompleteid]</ondown>
+                        <onback>50</onback>
+
+                        <height>85</height>
+
+                        <itemlayout width="40" height="40">
+                            <control type="label">
+                                <font>font_main</font>
+                                <label>$INFO[ListItem.Label]</label>
+                                <textcolor>main_fg_30</textcolor>
+                                <align>center</align>
+                            </control>
+                        </itemlayout>
+
+                        <focusedlayout width="40" height="40">
+                            <control type="label">
+                                <font>font_main</font>
+                                <label>$INFO[ListItem.Label]</label>
+                                <textcolor>main_fg_30</textcolor>
+                                <align>center</align>
+                                <visible>!Control.HasFocus($PARAM[id])</visible>
+                            </control>
+
+                            <control type="group">
+                                <visible>Control.HasFocus($PARAM[id])</visible>
+                                <control type="label">
+                                    <font>font_main_bold</font>
+                                    <label>$INFO[ListItem.Label]</label>
+                                    <textcolor>main_fg_90</textcolor>
+                                    <align>center</align>
+                                </control>
+                                <control type="image">
+                                    <height>scrollbar_w</height>
+                                    <top>35</top>
+                                    <include>Texture_Highlight_Scrollbar_H</include>
+                                    <width>30</width>
+                                    <centerleft>50%</centerleft>
+                                </control>
+                            </control>
+                        </focusedlayout>
+
+                        <content>
+                            <item>
+                                <label>A</label>
+                                <onclick>SetFocus($PARAM[editid])</onclick>
+                                <include>Object_SearchLetter_Click_a</include>
+                                <onclick>SetFocus($PARAM[id])</onclick>
+                            </item>
+                            <item>
+                                <label>B</label>
+                                <onclick>SetFocus($PARAM[editid])</onclick>
+                                <include>Object_SearchLetter_Click_b</include>
+                                <onclick>SetFocus($PARAM[id])</onclick>
+                            </item>
+                            <item>
+                                <label>C</label>
+                                <onclick>SetFocus($PARAM[editid])</onclick>
+                                <include>Object_SearchLetter_Click_c</include>
+                                <onclick>SetFocus($PARAM[id])</onclick>
+                            </item>
+                            <item>
+                                <label>D</label>
+                                <onclick>SetFocus($PARAM[editid])</onclick>
+                                <include>Object_SearchLetter_Click_d</include>
+                                <onclick>SetFocus($PARAM[id])</onclick>
+                            </item>
+                            <item>
+                                <label>E</label>
+                                <onclick>SetFocus($PARAM[editid])</onclick>
+                                <include>Object_SearchLetter_Click_e</include>
+                                <onclick>SetFocus($PARAM[id])</onclick>
+                            </item>
+                            <item>
+                                <label>F</label>
+                                <onclick>SetFocus($PARAM[editid])</onclick>
+                                <include>Object_SearchLetter_Click_f</include>
+                                <onclick>SetFocus($PARAM[id])</onclick>
+                            </item>
+                            <item>
+                                <label>G</label>
+                                <onclick>SetFocus($PARAM[editid])</onclick>
+                                <include>Object_SearchLetter_Click_g</include>
+                                <onclick>SetFocus($PARAM[id])</onclick>
+                            </item>
+                            <item>
+                                <label>H</label>
+                                <onclick>SetFocus($PARAM[editid])</onclick>
+                                <include>Object_SearchLetter_Click_h</include>
+                                <onclick>SetFocus($PARAM[id])</onclick>
+                            </item>
+                            <item>
+                                <label>I</label>
+                                <onclick>SetFocus($PARAM[editid])</onclick>
+                                <include>Object_SearchLetter_Click_i</include>
+                                <onclick>SetFocus($PARAM[id])</onclick>
+                            </item>
+                            <item>
+                                <label>J</label>
+                                <onclick>SetFocus($PARAM[editid])</onclick>
+                                <include>Object_SearchLetter_Click_j</include>
+                                <onclick>SetFocus($PARAM[id])</onclick>
+                            </item>
+                            <item>
+                                <label>K</label>
+                                <onclick>SetFocus($PARAM[editid])</onclick>
+                                <include>Object_SearchLetter_Click_k</include>
+                                <onclick>SetFocus($PARAM[id])</onclick>
+                            </item>
+                            <item>
+                                <label>L</label>
+                                <onclick>SetFocus($PARAM[editid])</onclick>
+                                <include>Object_SearchLetter_Click_l</include>
+                                <onclick>SetFocus($PARAM[id])</onclick>
+                            </item>
+                            <item>
+                                <label>M</label>
+                                <onclick>SetFocus($PARAM[editid])</onclick>
+                                <include>Object_SearchLetter_Click_m</include>
+                                <onclick>SetFocus($PARAM[id])</onclick>
+                            </item>
+                            <item>
+                                <label>N</label>
+                                <onclick>SetFocus($PARAM[editid])</onclick>
+                                <include>Object_SearchLetter_Click_n</include>
+                                <onclick>SetFocus($PARAM[id])</onclick>
+                            </item>
+                            <item>
+                                <label>O</label>
+                                <onclick>SetFocus($PARAM[editid])</onclick>
+                                <include>Object_SearchLetter_Click_o</include>
+                                <onclick>SetFocus($PARAM[id])</onclick>
+                            </item>
+                            <item>
+                                <label>P</label>
+                                <onclick>SetFocus($PARAM[editid])</onclick>
+                                <include>Object_SearchLetter_Click_p</include>
+                                <onclick>SetFocus($PARAM[id])</onclick>
+                            </item>
+                            <item>
+                                <label>Q</label>
+                                <onclick>SetFocus($PARAM[editid])</onclick>
+                                <include>Object_SearchLetter_Click_q</include>
+                                <onclick>SetFocus($PARAM[id])</onclick>
+                            </item>
+                            <item>
+                                <label>R</label>
+                                <onclick>SetFocus($PARAM[editid])</onclick>
+                                <include>Object_SearchLetter_Click_r</include>
+                                <onclick>SetFocus($PARAM[id])</onclick>
+                            </item>
+                            <item>
+                                <label>S</label>
+                                <onclick>SetFocus($PARAM[editid])</onclick>
+                                <include>Object_SearchLetter_Click_s</include>
+                                <onclick>SetFocus($PARAM[id])</onclick>
+                            </item>
+                            <item>
+                                <label>T</label>
+                                <onclick>SetFocus($PARAM[editid])</onclick>
+                                <include>Object_SearchLetter_Click_t</include>
+                                <onclick>SetFocus($PARAM[id])</onclick>
+                            </item>
+                            <item>
+                                <label>U</label>
+                                <onclick>SetFocus($PARAM[editid])</onclick>
+                                <include>Object_SearchLetter_Click_u</include>
+                                <onclick>SetFocus($PARAM[id])</onclick>
+                            </item>
+                            <item>
+                                <label>V</label>
+                                <onclick>SetFocus($PARAM[editid])</onclick>
+                                <include>Object_SearchLetter_Click_v</include>
+                                <onclick>SetFocus($PARAM[id])</onclick>
+                            </item>
+                            <item>
+                                <label>W</label>
+                                <onclick>SetFocus($PARAM[editid])</onclick>
+                                <include>Object_SearchLetter_Click_w</include>
+                                <onclick>SetFocus($PARAM[id])</onclick>
+                            </item>
+                            <item>
+                                <label>X</label>
+                                <onclick>SetFocus($PARAM[editid])</onclick>
+                                <include>Object_SearchLetter_Click_x</include>
+                                <onclick>SetFocus($PARAM[id])</onclick>
+                            </item>
+                            <item>
+                                <label>Y</label>
+                                <onclick>SetFocus($PARAM[editid])</onclick>
+                                <include>Object_SearchLetter_Click_y</include>
+                                <onclick>SetFocus($PARAM[id])</onclick>
+                            </item>
+                            <item>
+                                <label>Z</label>
+                                <onclick>SetFocus($PARAM[editid])</onclick>
+                                <include>Object_SearchLetter_Click_z</include>
+                                <onclick>SetFocus($PARAM[id])</onclick>
+                            </item>
+                            <item>
+                                <label>_</label>
+                                <onclick>SetFocus($PARAM[editid])</onclick>
+                                <include>Object_SearchLetter_Click__</include>
+                                <onclick>SetFocus($PARAM[id])</onclick>
+                            </item>
+                            <item>
+                                <label>&lt;</label>
+                                <onclick>SetFocus($PARAM[editid])</onclick>
+                                <include>Object_SearchLetter_Click_&lt;</include>
+                                <onclick>SetFocus($PARAM[id])</onclick>
+                            </item>
+                        </content>
+
+                    </control>
+
+                    <control type="fixedlist" id="$PARAM[autocompleteid]">
+                        <orientation>horizontal</orientation>
+                        <top>60</top>
+                        <height>80</height>
+                        <focusposition>1</focusposition>
+                        <movement>1</movement>
+                        <width>960</width>
+
+                        <onup>$PARAM[id]</onup>
+                        <onback>50</onback>
+                        <ondown>SetFocus(8000)</ondown>
+
+                        <centerleft>50%</centerleft>
+
+                        <visible>!String.IsEmpty(Control.GetLabel($PARAM[editid]).index(1))</visible>
+                        <visible>Integer.IsGreater(Container.NumPages,1)</visible>
+
+                        <onclick>Setfocus($PARAM[autocompleteid],0,absolute)</onclick>
+                        <onclick>SetFocus($PARAM[editid])</onclick>
+                        <onclick>RunScript(script.skinvariables,set_editcontrol=$PARAM[editid],setfocus=$PARAM[id],text=$INFO[Container($PARAM[autocompleteid]).ListItem.Label])</onclick>
+
+                        <itemlayout width="320">
+                            <control type="label">
+                                <font>font_main</font>
+                                <label>$INFO[ListItem.Label]</label>
+                                <textcolor>main_fg_30</textcolor>
+                                <align>center</align>
+                                <left>20</left>
+                                <right>20</right>
+                            </control>
+                        </itemlayout>
+
+                        <focusedlayout width="320">
+                            <control type="label">
+                                <font>font_main</font>
+                                <label>$INFO[ListItem.Label]</label>
+                                <textcolor>main_fg_30</textcolor>
+                                <align>center</align>
+                                <visible>!Control.HasFocus($PARAM[autocompleteid])</visible>
+                                <left>20</left>
+                                <right>20</right>
+                            </control>
+
+                            <control type="group">
+                                <visible>Control.HasFocus($PARAM[autocompleteid])</visible>
+                                <control type="label">
+                                    <font>font_main_bold</font>
+                                    <label>$INFO[ListItem.Label]</label>
+                                    <textcolor>main_fg_90</textcolor>
+                                    <align>center</align>
+                                    <left>20</left>
+                                    <right>20</right>
+                                </control>
+                                <control type="image">
+                                    <height>scrollbar_w</height>
+                                    <bottom>12</bottom>
+                                    <include>Texture_Highlight_Scrollbar_H</include>
+                                    <width>75%</width>
+                                    <centerleft>50%</centerleft>
+                                </control>
+                            </control>
+                        </focusedlayout>
+                        <content limit="9">$VAR[Path_Search_Autocomplete]</content>
+                    </control>
+                </control>
+            </control>
+        </definition>
+    </include>
+
+    <include name="View_Bumper">
+        <param name="groupid">320</param>
+        <param name="menuid">300</param>
+        <definition>
+            <control type="button" id="330">
+                <width>1</width>
+                <height>1</height>
+                <left>-1000</left>
+                <onfocus condition="!String.IsEmpty(Window.Property(List.ViewContainer))">SetFocus($INFO[Window.Property(List.ViewContainer)])</onfocus>
+                <onfocus condition="!String.IsEmpty(Window.Property(List.ViewContainer))">ClearProperty(List.ViewContainer)</onfocus>
+                <onfocus condition="String.IsEmpty(Window.Property(List.ViewContainer))">SetFocus($PARAM[groupid])</onfocus>
+                <onclick>SetFocus($PARAM[groupid])</onclick>
+                <visible allowhiddenfocus="true">Control.HasFocus(330)</visible>
+                <animation effect="fade" time="300" start="0" end="0">Focus</animation>
+            </control>
+            <control type="button" id="331">
+                <width>1</width>
+                <height>1</height>
+                <left>-1000</left>
+                <onfocus condition="!String.IsEmpty(Window.Property(List.ViewContainer))">SetFocus($INFO[Window.Property(List.ViewContainer)])</onfocus>
+                <onfocus condition="!String.IsEmpty(Window.Property(List.ViewContainer))">ClearProperty(List.ViewContainer)</onfocus>
+                <onfocus condition="String.IsEmpty(Window.Property(List.ViewContainer))">SetFocus($PARAM[groupid])</onfocus>
+                <onclick>SetFocus($PARAM[groupid])</onclick>
+                <visible allowhiddenfocus="true">Control.HasFocus(331)</visible>
+                <animation effect="fade" time="300" start="0" end="0">Focus</animation>
+            </control>
+            <control type="button" id="332">
+                <width>1</width>
+                <height>1</height>
+                <left>-1000</left>
+                <onfocus condition="!String.IsEmpty(Window.Property(List.ViewContainer))">SetFocus($INFO[Window.Property(List.ViewContainer)])</onfocus>
+                <onfocus condition="!String.IsEmpty(Window.Property(List.ViewContainer))">ClearProperty(List.ViewContainer)</onfocus>
+                <onfocus condition="String.IsEmpty(Window.Property(List.ViewContainer))">SetFocus($PARAM[groupid])</onfocus>
+                <onclick>SetFocus($PARAM[groupid])</onclick>
+                <visible allowhiddenfocus="true">Control.HasFocus(332)</visible>
+                <animation effect="fade" time="300" start="0" end="0">Focus</animation>
+            </control>
+            <control type="button" id="333">
+                <width>1</width>
+                <height>1</height>
+                <left>-1000</left>
+                <onfocus condition="!String.IsEmpty(Window.Property(List.ViewContainer))">SetFocus($INFO[Window.Property(List.ViewContainer)])</onfocus>
+                <onfocus condition="!String.IsEmpty(Window.Property(List.ViewContainer))">ClearProperty(List.ViewContainer)</onfocus>
+                <onfocus condition="String.IsEmpty(Window.Property(List.ViewContainer))">SetFocus($PARAM[groupid])</onfocus>
+                <onclick>SetFocus($PARAM[groupid])</onclick>
+                <visible allowhiddenfocus="true">Control.HasFocus(333)</visible>
+                <animation effect="fade" time="300" start="0" end="0">Focus</animation>
+            </control>
+        </definition>
+    </include>
+
+    <include name="View_Furniture_Scrollbar_V">
+        <control type="group">
+            <centerright>40</centerright>
+            <width>scrollbar_w</width>
+            <bottom>view_top</bottom>
+            <height>$PARAM[height]</height>
+            <visible allowhiddenfocus="true">Control.HasFocus($PARAM[id]) | Control.HasFocus(611)</visible>
+            <visible>$PARAM[visible]</visible>
+            <control type="scrollbar" id="$PARAM[id]">
+                <orientation>vertical</orientation>
+                <top>20</top>
+                <bottom>20</bottom>
+                <include>Texture_Scrollbar_V</include>
+                <include>Texture_Scrollbar_SliderBar_V</include>
+                <texturesliderbackground colordiffuse="main_fg_12" border="4">scrollbar/scrollv_line.png</texturesliderbackground>
+                <onleft>50</onleft>
+                <onright condition="!Window.IsVisible(MyPlaylist.xml)">SetFocus(8000)</onright>
+                <onback>50</onback>
+            </control>
+        </control>
+    </include>
+
+    <include name="View_Furniture_Edges">
+        <include>View_Hidden_Buttons</include>
+
+        <control type="group">
+            <control type="group">
+                <include>Animation_Group_Bumper</include>
+                <include>Animation_View_WindowChange</include>
+                <control type="group">
+                    <!-- <include>Animation_View_WindowChange</include> -->
+                    <include>View_Furniture_Bottom</include>
+                    <include content="View_Furniture_Scrollbar_V">
+                        <param name="id">64</param>
+                        <param name="height">view_poster_item_h</param>
+                        <param name="visible">$EXP[Exp_View_Scrollbar_Mini_V]</param>
+                    </include>
+                    <include content="View_Furniture_Scrollbar_V">
+                        <param name="id">65</param>
+                        <param name="height">400</param>
+                        <param name="visible">$EXP[Exp_View_Scrollbar_Midi_V]</param>
+                    </include>
+                    <include content="View_Furniture_Scrollbar_V">
+                        <param name="id">66</param>
+                        <param name="height">560</param>
+                        <param name="visible">$EXP[Exp_View_Scrollbar_Maxi_V]</param>
+                    </include>
+                </control>
+            </control>
+
+            <control type="group">
+                <visible>!$EXP[Exp_InfoDialogs]</visible>
+                <control type="group">
+                    <include content="Furniture_Bottom_Right">
+                        <param name="visible">!$EXP[Exp_View_ScrollFilter_HasFocus]</param>
+                    </include>
+                </control>
+            </control>
+        </control>
+    </include>
+
+    <include name="View_Main">
+        <definition>
+            <include content="View_Bumper">
+                <param name="groupid">50</param>
+            </include>
+
+            <include>Background</include>
+
+            <control type="group">
+                <include>Animation_Group_Bumper</include>
+                <include>Animation_View_WindowChange</include>
+                <include>View_Row_Items</include>
+                <include>View_Row_Info</include>
+            </control>
+
+            <include>View_Furniture_Edges</include>
+
+            <include>View_Dialog_Plot</include>
+
+            <include content="Hub_Widget_Splash" condition="Skin.HasSetting(Startup.WaitForLoad) + Skin.HasSetting(Startup.WaitForLoad.EnableForLibrary)">
+                <param name="condition">Window.IsVisible(DialogBusy.xml) + Integer.IsEqual(Container.NumItems,0)</param>
+                <param name="label">$LOCALIZE[31023] [LOWERCASE]$LOCALIZE[31324][/LOWERCASE]</param>
+                <param name="busyspinner">false</param>
+            </include>
+        </definition>
+    </include>
+</includes>
