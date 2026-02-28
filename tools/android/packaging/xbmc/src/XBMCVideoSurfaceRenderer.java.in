@@ -1,0 +1,403 @@
+package @APP_PACKAGE@;
+
+import android.graphics.SurfaceTexture;
+import android.opengl.EGL14;
+import android.opengl.EGLConfig;
+import android.opengl.EGLContext;
+import android.opengl.EGLDisplay;
+import android.opengl.EGLSurface;
+import android.opengl.GLES11Ext;
+import android.opengl.GLES20;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.util.Log;
+import android.view.Surface;
+
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.FloatBuffer;
+import java.util.concurrent.CountDownLatch;
+
+public class XBMCVideoSurfaceRenderer implements SurfaceTexture.OnFrameAvailableListener
+{
+  private static final String TAG = "Kodi";
+
+  private HandlerThread mRenderThread;
+  private Handler mRenderHandler;
+
+  private EGLDisplay mEglDisplay = EGL14.EGL_NO_DISPLAY;
+  private EGLContext mEglContext = EGL14.EGL_NO_CONTEXT;
+  private EGLSurface mEglSurface = EGL14.EGL_NO_SURFACE;
+
+  private SurfaceTexture mSurfaceTexture;
+  private Surface mInputSurface;
+  private int mOESTextureId;
+  private int mShaderProgram;
+
+  private int mPositionHandle;
+  private int mTexCoordHandle;
+  private int mTexMatrixHandle;
+  private int mTextureHandle;
+  private int mRangeScaleHandle;
+  private int mRangeOffsetHandle;
+
+  private final float[] mTransformMatrix = new float[16];
+  private float mRangeScale = 255.0f / 219.0f;
+  private float mRangeOffset = 16.0f / 255.0f;
+
+  private FloatBuffer mVertexBuffer;
+  private FloatBuffer mTexCoordBuffer;
+
+  private final CountDownLatch mInitLatch = new CountDownLatch(1);
+  private volatile boolean mReleased = false;
+
+  private static final String VERTEX_SHADER =
+      "attribute vec4 aPosition;\n" +
+      "attribute vec2 aTexCoord;\n" +
+      "varying vec2 vTexCoord;\n" +
+      "uniform mat4 uTexMatrix;\n" +
+      "void main() {\n" +
+      "    gl_Position = aPosition;\n" +
+      "    vTexCoord = (uTexMatrix * vec4(aTexCoord, 0.0, 1.0)).xy;\n" +
+      "}\n";
+
+  private static final String FRAGMENT_SHADER =
+      "#extension GL_OES_EGL_image_external : require\n" +
+      "precision mediump float;\n" +
+      "varying vec2 vTexCoord;\n" +
+      "uniform samplerExternalOES sTexture;\n" +
+      "uniform float uRangeScale;\n" +
+      "uniform float uRangeOffset;\n" +
+      "void main() {\n" +
+      "    vec3 rgb = texture2D(sTexture, vTexCoord).rgb;\n" +
+      "    rgb = (rgb - vec3(uRangeOffset)) * uRangeScale;\n" +
+      "    rgb = clamp(rgb, 0.0, 1.0);\n" +
+      "    gl_FragColor = vec4(rgb, 1.0);\n" +
+      "}\n";
+
+  // Fullscreen quad vertices (triangle strip)
+  private static final float[] VERTICES = {
+      -1.0f, -1.0f,
+       1.0f, -1.0f,
+      -1.0f,  1.0f,
+       1.0f,  1.0f,
+  };
+
+  private static final float[] TEX_COORDS = {
+      0.0f, 0.0f,
+      1.0f, 0.0f,
+      0.0f, 1.0f,
+      1.0f, 1.0f,
+  };
+
+  public static XBMCVideoSurfaceRenderer create(Surface outputSurface)
+  {
+    return new XBMCVideoSurfaceRenderer(outputSurface);
+  }
+
+  private XBMCVideoSurfaceRenderer(Surface outputSurface)
+  {
+    mVertexBuffer = createFloatBuffer(VERTICES);
+    mTexCoordBuffer = createFloatBuffer(TEX_COORDS);
+
+    mRenderThread = new HandlerThread("KodiVideoRenderer");
+    mRenderThread.start();
+    mRenderHandler = new Handler(mRenderThread.getLooper());
+
+    mRenderHandler.post(new Runnable()
+    {
+      @Override
+      public void run()
+      {
+        try
+        {
+          initEGL(outputSurface);
+          initShader();
+          initSurfaceTexture();
+          Log.d(TAG, "XBMCVideoSurfaceRenderer: Initialized successfully");
+        }
+        catch (Exception e)
+        {
+          Log.e(TAG, "XBMCVideoSurfaceRenderer: Init failed", e);
+        }
+        finally
+        {
+          mInitLatch.countDown();
+        }
+      }
+    });
+  }
+
+  public Surface getInputSurface()
+  {
+    try
+    {
+      mInitLatch.await();
+    }
+    catch (InterruptedException e)
+    {
+      Thread.currentThread().interrupt();
+      Log.e(TAG, "XBMCVideoSurfaceRenderer: Interrupted waiting for init");
+      return null;
+    }
+    return mInputSurface;
+  }
+
+  public void setRangeCorrection(boolean enabled)
+  {
+    if (enabled)
+    {
+      mRangeScale = 255.0f / 219.0f;
+      mRangeOffset = 16.0f / 255.0f;
+    }
+    else
+    {
+      mRangeScale = 1.0f;
+      mRangeOffset = 0.0f;
+    }
+  }
+
+  public void release()
+  {
+    if (mReleased)
+      return;
+    mReleased = true;
+
+    mRenderHandler.post(new Runnable()
+    {
+      @Override
+      public void run()
+      {
+        releaseGL();
+      }
+    });
+    mRenderThread.quitSafely();
+  }
+
+  @Override
+  public void onFrameAvailable(SurfaceTexture surfaceTexture)
+  {
+    if (mReleased)
+      return;
+
+    drawFrame();
+  }
+
+  private void initEGL(Surface outputSurface)
+  {
+    mEglDisplay = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY);
+    if (mEglDisplay == EGL14.EGL_NO_DISPLAY)
+      throw new RuntimeException("eglGetDisplay failed");
+
+    int[] version = new int[2];
+    if (!EGL14.eglInitialize(mEglDisplay, version, 0, version, 1))
+      throw new RuntimeException("eglInitialize failed");
+
+    int[] configAttribs = {
+        EGL14.EGL_RED_SIZE, 8,
+        EGL14.EGL_GREEN_SIZE, 8,
+        EGL14.EGL_BLUE_SIZE, 8,
+        EGL14.EGL_ALPHA_SIZE, 8,
+        EGL14.EGL_RENDERABLE_TYPE, EGL14.EGL_OPENGL_ES2_BIT,
+        EGL14.EGL_SURFACE_TYPE, EGL14.EGL_WINDOW_BIT,
+        EGL14.EGL_NONE
+    };
+
+    EGLConfig[] configs = new EGLConfig[1];
+    int[] numConfigs = new int[1];
+    if (!EGL14.eglChooseConfig(mEglDisplay, configAttribs, 0, configs, 0, 1, numConfigs, 0))
+      throw new RuntimeException("eglChooseConfig failed");
+    if (numConfigs[0] == 0)
+      throw new RuntimeException("No EGL configs found");
+
+    int[] contextAttribs = {
+        EGL14.EGL_CONTEXT_CLIENT_VERSION, 2,
+        EGL14.EGL_NONE
+    };
+    mEglContext = EGL14.eglCreateContext(mEglDisplay, configs[0], EGL14.EGL_NO_CONTEXT,
+        contextAttribs, 0);
+    if (mEglContext == EGL14.EGL_NO_CONTEXT)
+      throw new RuntimeException("eglCreateContext failed");
+
+    int[] surfaceAttribs = { EGL14.EGL_NONE };
+    mEglSurface = EGL14.eglCreateWindowSurface(mEglDisplay, configs[0], outputSurface,
+        surfaceAttribs, 0);
+    if (mEglSurface == EGL14.EGL_NO_SURFACE)
+      throw new RuntimeException("eglCreateWindowSurface failed");
+
+    if (!EGL14.eglMakeCurrent(mEglDisplay, mEglSurface, mEglSurface, mEglContext))
+      throw new RuntimeException("eglMakeCurrent failed");
+
+    Log.d(TAG, "XBMCVideoSurfaceRenderer: EGL initialized");
+  }
+
+  private void initShader()
+  {
+    int vertexShader = compileShader(GLES20.GL_VERTEX_SHADER, VERTEX_SHADER);
+    int fragmentShader = compileShader(GLES20.GL_FRAGMENT_SHADER, FRAGMENT_SHADER);
+
+    mShaderProgram = GLES20.glCreateProgram();
+    GLES20.glAttachShader(mShaderProgram, vertexShader);
+    GLES20.glAttachShader(mShaderProgram, fragmentShader);
+    GLES20.glLinkProgram(mShaderProgram);
+
+    int[] linkStatus = new int[1];
+    GLES20.glGetProgramiv(mShaderProgram, GLES20.GL_LINK_STATUS, linkStatus, 0);
+    if (linkStatus[0] != GLES20.GL_TRUE)
+    {
+      String error = GLES20.glGetProgramInfoLog(mShaderProgram);
+      GLES20.glDeleteProgram(mShaderProgram);
+      throw new RuntimeException("Shader link failed: " + error);
+    }
+
+    GLES20.glDeleteShader(vertexShader);
+    GLES20.glDeleteShader(fragmentShader);
+
+    mPositionHandle = GLES20.glGetAttribLocation(mShaderProgram, "aPosition");
+    mTexCoordHandle = GLES20.glGetAttribLocation(mShaderProgram, "aTexCoord");
+    mTexMatrixHandle = GLES20.glGetUniformLocation(mShaderProgram, "uTexMatrix");
+    mTextureHandle = GLES20.glGetUniformLocation(mShaderProgram, "sTexture");
+    mRangeScaleHandle = GLES20.glGetUniformLocation(mShaderProgram, "uRangeScale");
+    mRangeOffsetHandle = GLES20.glGetUniformLocation(mShaderProgram, "uRangeOffset");
+
+    Log.d(TAG, "XBMCVideoSurfaceRenderer: Shader compiled and linked");
+  }
+
+  private void initSurfaceTexture()
+  {
+    int[] textures = new int[1];
+    GLES20.glGenTextures(1, textures, 0);
+    mOESTextureId = textures[0];
+
+    GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, mOESTextureId);
+    GLES20.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
+        GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
+    GLES20.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
+        GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
+    GLES20.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
+        GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
+    GLES20.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
+        GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
+    GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
+
+    mSurfaceTexture = new SurfaceTexture(mOESTextureId);
+    mSurfaceTexture.setOnFrameAvailableListener(this, mRenderHandler);
+
+    mInputSurface = new Surface(mSurfaceTexture);
+
+    Log.d(TAG, "XBMCVideoSurfaceRenderer: SurfaceTexture created, textureId=" + mOESTextureId);
+  }
+
+  private void drawFrame()
+  {
+    if (mEglDisplay == EGL14.EGL_NO_DISPLAY || mReleased)
+      return;
+
+    try
+    {
+      mSurfaceTexture.updateTexImage();
+      mSurfaceTexture.getTransformMatrix(mTransformMatrix);
+
+      // Query current surface dimensions (handles SurfaceView resizing)
+      int[] width = new int[1];
+      int[] height = new int[1];
+      EGL14.eglQuerySurface(mEglDisplay, mEglSurface, EGL14.EGL_WIDTH, width, 0);
+      EGL14.eglQuerySurface(mEglDisplay, mEglSurface, EGL14.EGL_HEIGHT, height, 0);
+      GLES20.glViewport(0, 0, width[0], height[0]);
+
+      GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+      GLES20.glUseProgram(mShaderProgram);
+
+      GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+      GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, mOESTextureId);
+      GLES20.glUniform1i(mTextureHandle, 0);
+
+      GLES20.glUniformMatrix4fv(mTexMatrixHandle, 1, false, mTransformMatrix, 0);
+      GLES20.glUniform1f(mRangeScaleHandle, mRangeScale);
+      GLES20.glUniform1f(mRangeOffsetHandle, mRangeOffset);
+
+      GLES20.glEnableVertexAttribArray(mPositionHandle);
+      GLES20.glVertexAttribPointer(mPositionHandle, 2, GLES20.GL_FLOAT, false, 0, mVertexBuffer);
+
+      GLES20.glEnableVertexAttribArray(mTexCoordHandle);
+      GLES20.glVertexAttribPointer(mTexCoordHandle, 2, GLES20.GL_FLOAT, false, 0, mTexCoordBuffer);
+
+      GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
+
+      GLES20.glDisableVertexAttribArray(mPositionHandle);
+      GLES20.glDisableVertexAttribArray(mTexCoordHandle);
+      GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
+
+      EGL14.eglSwapBuffers(mEglDisplay, mEglSurface);
+    }
+    catch (Exception e)
+    {
+      Log.e(TAG, "XBMCVideoSurfaceRenderer: drawFrame failed", e);
+    }
+  }
+
+  private void releaseGL()
+  {
+    if (mInputSurface != null)
+    {
+      mInputSurface.release();
+      mInputSurface = null;
+    }
+    if (mSurfaceTexture != null)
+    {
+      mSurfaceTexture.release();
+      mSurfaceTexture = null;
+    }
+    if (mOESTextureId != 0)
+    {
+      GLES20.glDeleteTextures(1, new int[]{mOESTextureId}, 0);
+      mOESTextureId = 0;
+    }
+    if (mShaderProgram != 0)
+    {
+      GLES20.glDeleteProgram(mShaderProgram);
+      mShaderProgram = 0;
+    }
+    if (mEglDisplay != EGL14.EGL_NO_DISPLAY)
+    {
+      EGL14.eglMakeCurrent(mEglDisplay, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE,
+          EGL14.EGL_NO_CONTEXT);
+      if (mEglSurface != EGL14.EGL_NO_SURFACE)
+        EGL14.eglDestroySurface(mEglDisplay, mEglSurface);
+      if (mEglContext != EGL14.EGL_NO_CONTEXT)
+        EGL14.eglDestroyContext(mEglDisplay, mEglContext);
+      EGL14.eglTerminate(mEglDisplay);
+      mEglDisplay = EGL14.EGL_NO_DISPLAY;
+      mEglContext = EGL14.EGL_NO_CONTEXT;
+      mEglSurface = EGL14.EGL_NO_SURFACE;
+    }
+    Log.d(TAG, "XBMCVideoSurfaceRenderer: Released");
+  }
+
+  private static int compileShader(int type, String source)
+  {
+    int shader = GLES20.glCreateShader(type);
+    GLES20.glShaderSource(shader, source);
+    GLES20.glCompileShader(shader);
+
+    int[] compileStatus = new int[1];
+    GLES20.glGetShaderiv(shader, GLES20.GL_COMPILE_STATUS, compileStatus, 0);
+    if (compileStatus[0] != GLES20.GL_TRUE)
+    {
+      String error = GLES20.glGetShaderInfoLog(shader);
+      GLES20.glDeleteShader(shader);
+      throw new RuntimeException("Shader compile failed: " + error);
+    }
+    return shader;
+  }
+
+  private static FloatBuffer createFloatBuffer(float[] data)
+  {
+    ByteBuffer bb = ByteBuffer.allocateDirect(data.length * 4);
+    bb.order(ByteOrder.nativeOrder());
+    FloatBuffer fb = bb.asFloatBuffer();
+    fb.put(data);
+    fb.position(0);
+    return fb;
+  }
+}
