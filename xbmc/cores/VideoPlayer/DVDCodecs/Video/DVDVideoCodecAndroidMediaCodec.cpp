@@ -1513,6 +1513,15 @@ bool CDVDVideoCodecAndroidMediaCodec::ConfigureMediaCodec(void)
       CJNIMediaFormat::createVideoFormat(m_mime, m_hints.width, m_hints.height);
   mediaformat.setInteger(CJNIMediaFormat::KEY_MAX_INPUT_SIZE, 0);
 
+  if (CJNIBase::GetSDKVersion() >= 23 && m_hints.fpsrate > 0 && m_hints.fpsscale > 0)
+  {
+    // Realtime priority reduces decode latency; operating-rate tells the decoder
+    // the expected sustained throughput so it can clock appropriately.
+    mediaformat.setInteger("priority", 0);
+    mediaformat.setFloat("operating-rate",
+                         static_cast<float>(m_hints.fpsrate) / m_hints.fpsscale);
+  }
+
   if (CJNIBase::GetSDKVersion() >= 23 && m_render_surface)
   {
     // Handle rotation
