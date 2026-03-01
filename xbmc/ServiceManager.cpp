@@ -49,6 +49,7 @@
 #include "utils/log.h"
 #include "weather/WeatherManager.h"
 
+#include <chrono>
 #include <memory>
 
 using namespace KODI;
@@ -120,6 +121,13 @@ bool CServiceManager::InitStageOne()
 
 bool CServiceManager::InitStageTwo(const std::string& profilesUserDataFolder)
 {
+  auto _t0 = std::chrono::steady_clock::now();
+  auto _ms = [&_t0]() {
+    return std::chrono::duration_cast<std::chrono::milliseconds>(
+               std::chrono::steady_clock::now() - _t0)
+        .count();
+  };
+
   // Initialize the addon database (must be before the addon manager is init'd)
   m_databaseManager = std::make_unique<CDatabaseManager>();
 
@@ -132,6 +140,7 @@ bool CServiceManager::InitStageTwo(const std::string& profilesUserDataFolder)
     CLog::Log(LOGFATAL, "CServiceManager::{}: Unable to start CAddonMgr", __FUNCTION__);
     return false;
   }
+  CLog::Log(LOGINFO, "STARTUP: AddonMgr initialized ({}ms into StageTwo)", _ms());
 
   m_repositoryUpdater = std::make_unique<ADDON::CRepositoryUpdater>(*m_addonMgr);
 
@@ -156,6 +165,7 @@ bool CServiceManager::InitStageTwo(const std::string& profilesUserDataFolder)
   m_gameControllerManager = std::make_unique<GAME::CControllerManager>(*m_addonMgr);
   m_inputManager = std::make_unique<CInputManager>();
   m_inputManager->InitializeInputs();
+  CLog::Log(LOGINFO, "STARTUP: input/peripherals created ({}ms into StageTwo)", _ms());
 
   m_peripherals =
       std::make_unique<PERIPHERALS::CPeripherals>(*m_inputManager, *m_gameControllerManager);

@@ -173,6 +173,7 @@
 #include "platform/win32/threads/Win32Exception.h"
 #endif
 
+#include <chrono>
 #include <cmath>
 #include <memory>
 #include <mutex>
@@ -322,6 +323,13 @@ extern "C" void __stdcall cleanup_emu_environ();
 
 bool CApplication::Create()
 {
+  auto _t0 = std::chrono::steady_clock::now();
+  auto _ms = [&_t0]() {
+    return std::chrono::duration_cast<std::chrono::milliseconds>(
+               std::chrono::steady_clock::now() - _t0)
+        .count();
+  };
+
   m_bStop = false;
 
   RegisterSettings();
@@ -348,6 +356,7 @@ bool CApplication::Create()
   {
     return false;
   }
+  CLog::Log(LOGINFO, "STARTUP: InitStageOne done ({}ms)", _ms());
 
   // here we register all global classes for the CApplicationMessenger,
   // after that we can send messages to the corresponding modules
@@ -382,10 +391,11 @@ bool CApplication::Create()
   // set avutil callback
   av_log_set_callback(ff_avutil_log);
 
-  CLog::Log(LOGINFO, "loading settings");
+  CLog::Log(LOGINFO, "STARTUP: loading settings ({}ms)", _ms());
   const auto settingsComponent = CServiceBroker::GetSettingsComponent();
   if (!settingsComponent->Load())
     return false;
+  CLog::Log(LOGINFO, "STARTUP: settings loaded ({}ms)", _ms());
 
   // Log Cache GUI settings (replacement of cache in advancedsettings.xml)
   const auto settings = settingsComponent->GetSettings();
@@ -422,6 +432,7 @@ bool CApplication::Create()
   {
     return false;
   }
+  CLog::Log(LOGINFO, "STARTUP: InitStageTwo done ({}ms)", _ms());
 
   m_pActiveAE = std::make_unique<ActiveAE::CActiveAE>();
   CServiceBroker::RegisterAE(m_pActiveAE.get());
@@ -435,6 +446,7 @@ bool CApplication::Create()
     CLog::Log(LOGFATAL, "CApplication::Create: Unable to load keyboard layouts");
     return false;
   }
+  CLog::Log(LOGINFO, "STARTUP: keyboard layouts loaded ({}ms)", _ms());
 
   // set user defined CA trust bundle
   std::string caCert =
@@ -455,12 +467,20 @@ bool CApplication::Create()
 
   CUtil::InitRandomSeed();
 
+  CLog::Log(LOGINFO, "STARTUP: Create() complete ({}ms)", _ms());
   m_lastRenderTime = std::chrono::steady_clock::now();
   return true;
 }
 
 bool CApplication::CreateGUI()
 {
+  auto _t0 = std::chrono::steady_clock::now();
+  auto _ms = [&_t0]() {
+    return std::chrono::duration_cast<std::chrono::milliseconds>(
+               std::chrono::steady_clock::now() - _t0)
+        .count();
+  };
+
   m_frameMoveGuard.lock();
 
   const auto appPower = GetComponent<CApplicationPowerHandling>();
@@ -498,8 +518,7 @@ bool CApplication::CreateGUI()
     }
     else
     {
-      CLog::Log(LOGINFO, "CApplication::{} - using the {} windowing system", __FUNCTION__,
-                windowSystem);
+      CLog::Log(LOGINFO, "STARTUP: windowing system {} initialized ({}ms)", windowSystem, _ms());
       break;
     }
   }
@@ -546,6 +565,7 @@ bool CApplication::CreateGUI()
   {
     return false;
   }
+  CLog::Log(LOGINFO, "STARTUP: window created ({}ms)", _ms());
 
   // Set default screen saver mode
   auto screensaverModeSetting = std::static_pointer_cast<CSettingString>(settings->GetSetting(CSettings::SETTING_SCREENSAVER_MODE));
@@ -566,6 +586,7 @@ bool CApplication::CreateGUI()
 
   m_pGUI = std::make_unique<CGUIComponent>();
   m_pGUI->Init();
+  CLog::Log(LOGINFO, "STARTUP: GUI component initialized ({}ms)", _ms());
 
   // Splash requires gui component!!
   CServiceBroker::GetRenderSystem()->ShowSplash("");
@@ -577,6 +598,7 @@ bool CApplication::CreateGUI()
 
   RESOLUTION_INFO info = CServiceBroker::GetWinSystem()->GetGfxContext().GetResInfo();
   CLog::Log(LOGINFO, "GUI format {}x{}, Display {}", info.iWidth, info.iHeight, info.strMode);
+  CLog::Log(LOGINFO, "STARTUP: CreateGUI() complete ({}ms)", _ms());
 
   return true;
 }
@@ -606,6 +628,13 @@ bool CApplication::InitWindow(RESOLUTION res)
 
 bool CApplication::Initialize()
 {
+  auto _t0 = std::chrono::steady_clock::now();
+  auto _ms = [&_t0]() {
+    return std::chrono::duration_cast<std::chrono::milliseconds>(
+               std::chrono::steady_clock::now() - _t0)
+        .count();
+  };
+
   m_pActiveAE->Start();
   // restore AE's previous volume state
 
@@ -621,9 +650,12 @@ bool CApplication::Initialize()
   cdio_loglevel_default = CDIO_LOG_ERROR;
 #endif
 
+  CLog::Log(LOGINFO, "STARTUP: audio engine started ({}ms)", _ms());
+
   // load the language and its translated strings
   if (!LoadLanguage(false))
     return false;
+  CLog::Log(LOGINFO, "STARTUP: language loaded ({}ms)", _ms());
 
   // load media manager sources (e.g. root addon type sources depend on language strings to be available)
   CServiceBroker::GetMediaManager().LoadSources();
@@ -636,6 +668,7 @@ bool CApplication::Initialize()
       "special://xbmc/media/icon256x256.png", EventLevel::Basic)));
 
   m_ServiceManager->GetNetwork().WaitForNet();
+  CLog::Log(LOGINFO, "STARTUP: network ready ({}ms)", _ms());
 
   // initialize (and update as needed) our databases
   CDatabaseManager &databaseManager = m_ServiceManager->GetDatabaseManager();
@@ -659,6 +692,7 @@ bool CApplication::Initialize()
       ++iDots;
   }
   CServiceBroker::GetRenderSystem()->ShowSplash("");
+  CLog::Log(LOGINFO, "STARTUP: databases initialized ({}ms)", _ms());
 
   // Initialize GUI font manager to build/update fonts cache
   //! @todo Move GUIFontManager into service broker and drop the global reference
@@ -682,6 +716,7 @@ bool CApplication::Initialize()
       ++iDots;
   }
   CServiceBroker::GetRenderSystem()->ShowSplash("");
+  CLog::Log(LOGINFO, "STARTUP: font manager initialized ({}ms)", _ms());
 
   // GUI depends on seek handler
   GetComponent<CApplicationPlayer>()->GetSeekHandler().Configure();
@@ -736,6 +771,8 @@ bool CApplication::Initialize()
       }
     }
 
+    CLog::Log(LOGINFO, "STARTUP: addon migration done ({}ms)", _ms());
+
     // Start splashscreen and load skin
     CServiceBroker::GetRenderSystem()->ShowSplash("");
     skinHandling->m_confirmSkinChange = true;
@@ -761,6 +798,7 @@ bool CApplication::Initialize()
         return false;
       }
     }
+    CLog::Log(LOGINFO, "STARTUP: skin loaded ({}ms)", _ms());
 
     // initialize splash window after splash screen disappears
     // because we need a real window in the background which gets
@@ -807,6 +845,7 @@ bool CApplication::Initialize()
   {
     CLog::Log(LOGERROR, "Application - Init3 failed");
   }
+  CLog::Log(LOGINFO, "STARTUP: InitStageThree done ({}ms)", _ms());
 
   g_sysinfo.Refresh();
 
@@ -831,7 +870,7 @@ bool CApplication::Initialize()
   if (!profileManager->UsingLoginScreen())
     CServiceBroker::GetServiceAddons().Start();
 
-  CLog::Log(LOGINFO, "initialize done");
+  CLog::Log(LOGINFO, "STARTUP: Initialize() complete ({}ms)", _ms());
 
   const auto appPower = GetComponent<CApplicationPowerHandling>();
   appPower->CheckOSScreenSaverInhibitionSetting();

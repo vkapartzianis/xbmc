@@ -45,6 +45,8 @@
 #include "utils/log.h"
 #include "video/dialogs/GUIDialogFullScreenInfo.h"
 
+#include <chrono>
+
 using namespace KODI::MESSAGING;
 
 CApplicationSkinHandling::CApplicationSkinHandling(IMsgTargetCallback* msgCb,
@@ -56,6 +58,13 @@ CApplicationSkinHandling::CApplicationSkinHandling(IMsgTargetCallback* msgCb,
 
 bool CApplicationSkinHandling::LoadSkin(const std::string& skinID)
 {
+  auto _t0 = std::chrono::steady_clock::now();
+  auto _ms = [&_t0]() {
+    return std::chrono::duration_cast<std::chrono::milliseconds>(
+               std::chrono::steady_clock::now() - _t0)
+        .count();
+  };
+
   std::shared_ptr<ADDON::CSkinInfo> skin;
   {
     ADDON::AddonPtr addon;
@@ -109,8 +118,10 @@ bool CApplicationSkinHandling::LoadSkin(const std::string& skinID)
   }
 
   UnloadSkin();
+  CLog::Log(LOGINFO, "STARTUP: skin unloaded ({}ms)", _ms());
 
   skin->Start();
+  CLog::Log(LOGINFO, "STARTUP: skin->Start() done ({}ms)", _ms());
 
   // migrate any skin-specific settings that are still stored in guisettings.xml
   CSkinSettings::GetInstance().MigrateSettings(skin);
@@ -135,8 +146,10 @@ bool CApplicationSkinHandling::LoadSkin(const std::string& skinID)
       settings->GetString(CSettings::SETTING_LOOKANDFEEL_SKINCOLORS));
 
   g_SkinInfo->LoadIncludes();
+  CLog::Log(LOGINFO, "STARTUP: skin includes loaded ({}ms)", _ms());
 
   g_fontManager.LoadFonts(settings->GetString(CSettings::SETTING_LOOKANDFEEL_FONT));
+  CLog::Log(LOGINFO, "STARTUP: skin fonts loaded ({}ms)", _ms());
 
   // load in the skin strings
   std::string langPath = URIUtils::AddFileToFolder(skin->Path(), "language");
@@ -145,20 +158,12 @@ bool CApplicationSkinHandling::LoadSkin(const std::string& skinID)
   g_localizeStrings.LoadSkinStrings(langPath,
                                     settings->GetString(CSettings::SETTING_LOCALE_LANGUAGE));
   g_SkinInfo->LoadTimers();
-
-  const auto start = std::chrono::steady_clock::now();
-
-  CLog::Log(LOGINFO, "  load new skin...");
+  CLog::Log(LOGINFO, "STARTUP: skin strings/timers loaded ({}ms)", _ms());
 
   // Load custom windows
   LoadCustomWindows();
+  CLog::Log(LOGINFO, "STARTUP: custom windows loaded ({}ms)", _ms());
 
-  const auto end = std::chrono::steady_clock::now();
-  std::chrono::duration<double, std::milli> duration = end - start;
-
-  CLog::Log(LOGDEBUG, "Load Skin XML: {:.2f} ms", duration.count());
-
-  CLog::Log(LOGINFO, "  initialize new skin...");
   CServiceBroker::GetGUI()->GetWindowManager().AddMsgTarget(m_msgCb);
   CServiceBroker::GetGUI()->GetWindowManager().AddMsgTarget(&CServiceBroker::GetPlaylistPlayer());
   CServiceBroker::GetGUI()->GetWindowManager().AddMsgTarget(&g_fontManager);
@@ -171,11 +176,12 @@ bool CApplicationSkinHandling::LoadSkin(const std::string& skinID)
   CServiceBroker::GetGUI()->GetAudioManager().Enable(true);
   CServiceBroker::GetGUI()->GetAudioManager().Load();
   CServiceBroker::GetTextureCache()->Initialize();
+  CLog::Log(LOGINFO, "STARTUP: window manager + texture cache initialized ({}ms)", _ms());
 
   if (g_SkinInfo->HasSkinFile("DialogFullScreenInfo.xml"))
     CServiceBroker::GetGUI()->GetWindowManager().Add(new CGUIDialogFullScreenInfo);
 
-  CLog::Log(LOGINFO, "  skin loaded...");
+  CLog::Log(LOGINFO, "STARTUP: LoadSkin() complete ({}ms)", _ms());
 
   // leave the graphics lock
   lock.unlock();
