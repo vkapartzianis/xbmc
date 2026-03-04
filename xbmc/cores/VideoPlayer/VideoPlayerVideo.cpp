@@ -29,6 +29,11 @@
 #include <numeric>
 #include <sstream>
 
+#if defined(TARGET_ANDROID)
+#include <sys/resource.h>
+#include <unistd.h>
+#endif
+
 using namespace std::chrono_literals;
 
 class CDVDMsgVideoCodecChange : public CDVDMsg
@@ -311,6 +316,19 @@ inline MsgQueueReturnCode CVideoPlayerVideo::GetMessage(std::shared_ptr<CDVDMsg>
 void CVideoPlayerVideo::Process()
 {
   CLog::Log(LOGINFO, "running thread: video_thread");
+
+#if defined(TARGET_ANDROID)
+  // Set Android video thread priority (-10 = THREAD_PRIORITY_VIDEO).
+  // The default CThread::SetPriority only shifts ±1 nice level which is
+  // negligible.  Android's own video threads use -10 to ensure timely
+  // frame delivery to the compositor.
+  {
+    pid_t tid = gettid();
+    setpriority(PRIO_PROCESS, tid, -10);
+    CLog::Log(LOGINFO, "video_thread: set Android priority to {} (requested -10)",
+              getpriority(PRIO_PROCESS, tid));
+  }
+#endif
 
   double pts = 0;
   double frametime = (double)DVD_TIME_BASE / m_fFrameRate;
