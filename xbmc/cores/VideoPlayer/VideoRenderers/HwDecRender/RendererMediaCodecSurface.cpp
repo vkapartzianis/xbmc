@@ -19,6 +19,7 @@
 #include "windowing/GraphicContext.h"
 
 #include "platform/android/activity/XBMCApp.h"
+#include "windowing/android/AndroidUtils.h"
 
 #include <chrono>
 #include <thread>
@@ -113,7 +114,17 @@ void CRendererMediaCodecSurface::ReleaseVideoBuffer(int idx, bool render)
     if (mcvb)
     {
       if (render && m_bConfigured)
-        mcvb->RenderUpdate(m_surfDestRect, CXBMCApp::Get().GetNextFrameTime());
+      {
+        // On Quest devices use immediate buffer release instead of timed
+        // release.  releaseOutputBufferAtTime causes intermittent colour
+        // flashes with Dolby Vision content on the Qualcomm DV decoder and
+        // adds unnecessary latency for a 2-D panel app that does not need
+        // frame-precise vsync scheduling.
+        int64_t displayTime = CAndroidUtils::IsQuestDevice()
+                                  ? 0
+                                  : CXBMCApp::Get().GetNextFrameTime();
+        mcvb->RenderUpdate(m_surfDestRect, displayTime);
+      }
       else
         mcvb->ReleaseOutputBuffer(render, 0);
     }
