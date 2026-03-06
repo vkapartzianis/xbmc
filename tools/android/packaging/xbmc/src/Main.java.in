@@ -381,6 +381,10 @@ public class Main extends NativeActivity implements Choreographer.FrameCallback
 
   public void setVideoRefreshRate(int hz)
   {
+    final int targetHz = hz > 0 ? hz : Integer.parseInt(mOriginalRefreshRate);
+
+    trySetSurfaceFrameRate(targetHz);
+
     if (!Shizuku.pingBinder())
     {
       Log.w(TAG, "setVideoRefreshRate: Shizuku not running");
@@ -391,13 +395,14 @@ public class Main extends NativeActivity implements Choreographer.FrameCallback
       Log.w(TAG, "setVideoRefreshRate: Shizuku permission not granted");
       return;
     }
-    final String value = hz > 0 ? String.valueOf(hz) : mOriginalRefreshRate;
+    final String value = String.valueOf(targetHz);
     new Thread(() -> {
       try
       {
         java.lang.reflect.Method m = Shizuku.class.getDeclaredMethod(
             "newProcess", String[].class, String[].class, String.class);
         m.setAccessible(true);
+
         Process p = (Process) m.invoke(null,
             new String[]{"setprop", "debug.oculus.refreshRate", value}, null, null);
         int exit = p.waitFor();
@@ -408,7 +413,47 @@ public class Main extends NativeActivity implements Choreographer.FrameCallback
       {
         Log.e(TAG, "setVideoRefreshRate: " + e.getMessage());
       }
+
+      // Call Surface.setFrameRate again after setprop
+      trySetSurfaceFrameRate(targetHz);
     }).start();
+  }
+
+  /**
+   * Attempts to set the frame rate on the main rendering Surface.
+   * This is the Java equivalent of ANativeWindow_setFrameRate.
+   * FIXED_SOURCE compatibility + CHANGE_FRAME_RATE_ALWAYS strategy.
+   */
+  private void trySetSurfaceFrameRate(int hz)
+  {
+    try
+    {
+      if (mMainView == null)
+        return;
+      android.view.Surface surface = mMainView.getHolder().getSurface();
+      if (surface == null || !surface.isValid())
+      {
+        Log.w(TAG, "trySetSurfaceFrameRate: no valid surface");
+        return;
+      }
+
+      float rate = hz > 0 ? (float) hz : 0.0f;
+      int compat = hz > 0 ? 1 : 0; // 1 = FIXED_SOURCE
+      if (Build.VERSION.SDK_INT >= 31)
+      {
+        surface.setFrameRate(rate, compat, hz > 0 ? 1 : 0); // 1 = ALWAYS
+        Log.i(TAG, "Surface.setFrameRate(" + hz + "Hz, FIXED_SOURCE, ALWAYS)");
+      }
+      else if (Build.VERSION.SDK_INT >= 30)
+      {
+        surface.setFrameRate(rate, compat);
+        Log.i(TAG, "Surface.setFrameRate(" + hz + "Hz, FIXED_SOURCE)");
+      }
+    }
+    catch (Exception e)
+    {
+      Log.w(TAG, "trySetSurfaceFrameRate failed: " + e.getMessage());
+    }
   }
 
   /**

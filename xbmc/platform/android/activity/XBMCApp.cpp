@@ -787,8 +787,12 @@ void CXBMCApp::SetRefreshRate(float rate)
     {
       // rate=0 is used as a signal to restore the pre-playback refresh rate.
       if (rate == 0.0f)
+      {
         if (auto* jni = CJNIMainActivity::GetAppInstance())
           jni->setVideoRefreshRate(0);
+        if (m_window)
+          m_window->SetFrameRate(0.0f);
+      }
       return;
     }
     m_refreshRate = rate;
@@ -815,10 +819,12 @@ void CXBMCApp::SetRefreshRate(float rate)
       }
     }
     CLog::Log(LOGINFO, "CXBMCApp::SetRefreshRate: Quest {:.3f} -> {}Hz", rate, hz);
+    // ANativeWindow_setFrameRate before setprop (Java side also calls
+    // Surface.setFrameRate before and after setprop)
+    if (m_window)
+      m_window->SetFrameRate(static_cast<float>(hz));
     if (auto* jni = CJNIMainActivity::GetAppInstance())
       jni->setVideoRefreshRate(hz);
-    if (m_window)
-      m_window->SetFrameRate(rate);
     return;
   }
 
