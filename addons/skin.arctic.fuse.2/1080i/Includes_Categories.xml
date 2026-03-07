@@ -199,14 +199,17 @@
         <param name="color_nf">main_fg_30</param>
         <param name="hidden_button">List_ButtonMenu_Row_HiddenButton_Home</param>
         <param name="preitem_fade">True</param>
-        <param name="itemlayout_w">240</param>
+        <param name="itemlayout_w">200</param>
         <param name="scrolltime">400</param>
+        <param name="fade">true</param>
+        <param name="width">800</param>
+        <param name="movement">3</param>
         <definition>
             <include content="List_ButtonMenu_Row">
                 <param name="id">$PARAM[id]</param>
                 <param name="color_fo">$PARAM[color_fo]</param>
                 <param name="color_nf">$PARAM[color_nf]</param>
-                <param name="itemlayout_w">200</param>
+                <param name="itemlayout_w">$PARAM[itemlayout_w]</param>
                 <param name="offset_x">view_button_offset_x</param>
                 <param name="control">fixedlist</param>
                 <param name="font">$PARAM[font]</param>
@@ -215,29 +218,28 @@
                 <param name="hidden_button_prefix">$PARAM[hidden_button_prefix]</param>
                 <height>120</height>
 
-                <hitrect x="0" y="0" w="0" h="0" />
-
                 <nested />
 
                 <preloaditems>0</preloaditems>
                 <scrolltime tween="quadratic">0</scrolltime>
 
                 <include content="Animation_ConditionalFade">
-                    <param name="condition">true</param>
+                    <param name="condition">$PARAM[fade]</param>
                 </include>
 
                 <focusposition>0</focusposition>
-                <movement>3</movement>
-                <width>800</width>
+                <movement>$PARAM[movement]</movement>
+                <width>$PARAM[width]</width>
 
                 <onfocus condition="$PARAM[slide]">SetProperty(Slide.WidgetContainer,$PARAM[slide_id],$PARAM[property_window_id])</onfocus>
                 <onfocus condition="![$PARAM[slide]]">ClearProperty(Slide.WidgetContainer,$PARAM[property_window_id])</onfocus>
             </include>
 
-            <include content="Categories_Selector_FakeList">
+            <include content="Categories_Selector_FakeList" condition="$PARAM[fade]">
                 <param name="id">$PARAM[id]</param>
                 <param name="color_fo">$PARAM[color_fo]</param>
                 <param name="color_nf">$PARAM[color_nf]</param>
+                <height>120</height>
                 <nested />
             </include>
 

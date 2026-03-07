@@ -1106,7 +1106,16 @@
         <value condition="!String.IsEmpty(Container(7000).ListItem.Premiered)">$INFO[Container(7000).ListItem.Premiered]</value>
     </variable>
 
+    <variable name="Label_VideoPlayer_AudioCodec">
+        <value condition="String.Contains(VideoPlayer.AudioCodec,atmos)">DD+ ATMOS</value>
+        <value>$INFO[VideoPlayer.AudioCodec]</value>
+    </variable>
+    <variable name="Label_ListItem_AudioCodec">
+        <value condition="String.Contains(ListItem.AudioCodec,atmos)">DD+ ATMOS</value>
+        <value>$INFO[ListItem.AudioCodec]</value>
+    </variable>
     <variable name="Label_VideoPlayer_AudioChannels">
+        <value condition="String.Contains(VideoPlayer.AudioCodec,atmos)"></value>
         <value condition="Integer.IsEqual(VideoPlayer.AudioChannels,10)">9.1</value>
         <value condition="Integer.IsEqual(VideoPlayer.AudioChannels,9)">8.1</value>
         <value condition="Integer.IsEqual(VideoPlayer.AudioChannels,8)">7.1</value>
@@ -1117,6 +1126,7 @@
         <value>$INFO[VideoPlayer.AudioChannels,,.0]</value>
     </variable>
     <variable name="Label_ListItem_AudioChannels">
+        <value condition="String.Contains(ListItem.AudioCodec,atmos)"></value>
         <value condition="Integer.IsEqual(ListItem.AudioChannels,10)">9.1</value>
         <value condition="Integer.IsEqual(ListItem.AudioChannels,9)">8.1</value>
         <value condition="Integer.IsEqual(ListItem.AudioChannels,8)">7.1</value>

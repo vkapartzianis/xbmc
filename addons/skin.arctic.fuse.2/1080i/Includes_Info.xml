@@ -1368,53 +1368,58 @@
         <definition>
             <include content="Info_Line_VideoQuality_Object">
                 <param name="colordiffuse">$PARAM[colordiffuse]</param>
+                <param name="label">ATMOS</param>
+                <param name="visible">$PARAM[visible] + String.Contains($PARAM[listitem_audiocodec],atmos)</param>
+            </include>
+            <include content="Info_Line_VideoQuality_Object">
+                <param name="colordiffuse">$PARAM[colordiffuse]</param>
                 <param name="label">9.1</param>
-                <param name="visible">$PARAM[visible] + Integer.IsEqual($PARAM[listitem_audiochannels],10)</param>
+                <param name="visible">$PARAM[visible] + Integer.IsEqual($PARAM[listitem_audiochannels],10) + !String.Contains($PARAM[listitem_audiocodec],atmos)</param>
             </include>
             <include content="Info_Line_VideoQuality_Object">
                 <param name="colordiffuse">$PARAM[colordiffuse]</param>
                 <param name="label">8.1</param>
-                <param name="visible">$PARAM[visible] + Integer.IsEqual($PARAM[listitem_audiochannels],9)</param>
+                <param name="visible">$PARAM[visible] + Integer.IsEqual($PARAM[listitem_audiochannels],9) + !String.Contains($PARAM[listitem_audiocodec],atmos)</param>
             </include>
             <include content="Info_Line_VideoQuality_Object">
                 <param name="colordiffuse">$PARAM[colordiffuse]</param>
                 <param name="label">7.1</param>
-                <param name="visible">$PARAM[visible] + Integer.IsEqual($PARAM[listitem_audiochannels],8)</param>
+                <param name="visible">$PARAM[visible] + Integer.IsEqual($PARAM[listitem_audiochannels],8) + !String.Contains($PARAM[listitem_audiocodec],atmos)</param>
             </include>
             <include content="Info_Line_VideoQuality_Object">
                 <param name="colordiffuse">$PARAM[colordiffuse]</param>
                 <param name="label">6.1</param>
-                <param name="visible">$PARAM[visible] + Integer.IsEqual($PARAM[listitem_audiochannels],7)</param>
+                <param name="visible">$PARAM[visible] + Integer.IsEqual($PARAM[listitem_audiochannels],7) + !String.Contains($PARAM[listitem_audiocodec],atmos)</param>
             </include>
             <include content="Info_Line_VideoQuality_Object">
                 <param name="colordiffuse">$PARAM[colordiffuse]</param>
                 <param name="label">5.1</param>
-                <param name="visible">$PARAM[visible] + Integer.IsEqual($PARAM[listitem_audiochannels],6)</param>
+                <param name="visible">$PARAM[visible] + Integer.IsEqual($PARAM[listitem_audiochannels],6) + !String.Contains($PARAM[listitem_audiocodec],atmos)</param>
             </include>
             <include content="Info_Line_VideoQuality_Object">
                 <param name="colordiffuse">$PARAM[colordiffuse]</param>
                 <param name="label">4.1</param>
-                <param name="visible">$PARAM[visible] + Integer.IsEqual($PARAM[listitem_audiochannels],5)</param>
+                <param name="visible">$PARAM[visible] + Integer.IsEqual($PARAM[listitem_audiochannels],5) + !String.Contains($PARAM[listitem_audiocodec],atmos)</param>
             </include>
             <include content="Info_Line_VideoQuality_Object">
                 <param name="colordiffuse">$PARAM[colordiffuse]</param>
                 <param name="label">4.0</param>
-                <param name="visible">$PARAM[visible] + Integer.IsEqual($PARAM[listitem_audiochannels],4)</param>
+                <param name="visible">$PARAM[visible] + Integer.IsEqual($PARAM[listitem_audiochannels],4) + !String.Contains($PARAM[listitem_audiocodec],atmos)</param>
             </include>
             <include content="Info_Line_VideoQuality_Object">
                 <param name="colordiffuse">$PARAM[colordiffuse]</param>
                 <param name="label">2.1</param>
-                <param name="visible">$PARAM[visible] + Integer.IsEqual($PARAM[listitem_audiochannels],3)</param>
+                <param name="visible">$PARAM[visible] + Integer.IsEqual($PARAM[listitem_audiochannels],3) + !String.Contains($PARAM[listitem_audiocodec],atmos)</param>
             </include>
             <include content="Info_Line_VideoQuality_Object">
                 <param name="colordiffuse">$PARAM[colordiffuse]</param>
                 <param name="label">2.0</param>
-                <param name="visible">$PARAM[visible] + Integer.IsEqual($PARAM[listitem_audiochannels],2)</param>
+                <param name="visible">$PARAM[visible] + Integer.IsEqual($PARAM[listitem_audiochannels],2) + !String.Contains($PARAM[listitem_audiocodec],atmos)</param>
             </include>
             <include content="Info_Line_VideoQuality_Object">
                 <param name="colordiffuse">$PARAM[colordiffuse]</param>
                 <param name="label">1.0</param>
-                <param name="visible">$PARAM[visible] + Integer.IsEqual($PARAM[listitem_audiochannels],1)</param>
+                <param name="visible">$PARAM[visible] + Integer.IsEqual($PARAM[listitem_audiochannels],1) + !String.Contains($PARAM[listitem_audiocodec],atmos)</param>
             </include>
         </definition>
     </include>
@@ -1445,6 +1450,7 @@
             <include content="Info_Line_AudioChannels" condition="!Skin.HasSetting(Infoline.DisableAudioChannels)">
                 <param name="colordiffuse">$PARAM[colordiffuse]</param>
                 <param name="listitem_audiochannels">$PARAM[listitem_audiochannels]</param>
+                <param name="listitem_audiocodec">$PARAM[listitem_audiocodec]</param>
                 <param name="visible">$PARAM[visible] + !String.IsEmpty($PARAM[listitem_audiochannels])</param>
             </include>
             <include content="Info_Line_VideoQuality_Icon" condition="!Skin.HasSetting(Infoline.DisableVersion)">
@@ -1485,6 +1491,7 @@
                     <param name="listitem_dbtype">$PARAM[container]ListItem.DBType</param>
                     <param name="listitem_hdrtype">$PARAM[container]ListItem.HdrType</param>
                     <param name="listitem_audiochannels">$PARAM[container]ListItem.AudioChannels</param>
+                    <param name="listitem_audiocodec">$PARAM[container]ListItem.AudioCodec</param>
                     <param name="visible">!Integer.IsEqual(Container($PARAM[grouplistid]).NumItems,0) + Integer.IsEqual(Window.Property(TMDBHelper.WidgetContainer),System.CurrentControlID)</param>
                 </include>
                 <include content="Info_Line_VideoQuality">
@@ -1496,6 +1503,7 @@
                     <param name="listitem_dbtype">Window(Home).Property(TMDbHelper.ListItem.base_dbtype)</param>
                     <param name="listitem_hdrtype">Window(Home).Property(TMDbHelper.ListItem.base_hdrtype)</param>
                     <param name="listitem_audiochannels">Window(Home).Property(TMDbHelper.ListItem.base_audiochannels)</param>
+                    <param name="listitem_audiocodec">Window(Home).Property(TMDbHelper.ListItem.base_audiocodec)</param>
                     <param name="visible">!Integer.IsEqual(Container($PARAM[grouplistid]).NumItems,0) + !Integer.IsEqual(Window.Property(TMDBHelper.WidgetContainer),System.CurrentControlID)</param>
                 </include>
 
