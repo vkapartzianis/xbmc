@@ -32,6 +32,10 @@
 #if defined(TARGET_DARWIN_TVOS)
 #include "platform/darwin/tvos/TVOSSettingsHandler.h"
 #endif // defined(TARGET_DARWIN_TVOS)
+#if defined(TARGET_ANDROID)
+#include "filesystem/IFileTypes.h"
+#include "windowing/android/AndroidUtils.h"
+#endif
 #if defined(TARGET_DARWIN_EMBEDDED)
 #include "SettingAddon.h"
 #endif
@@ -365,6 +369,23 @@ void CSettings::InitializeDefaults()
                 CSettings::SETTING_VIDEOSCREEN_FAKEFULLSCREEN);
     else
       std::static_pointer_cast<CSettingBool>(setting)->SetDefault(false);
+  }
+#endif
+
+#if defined(TARGET_ANDROID)
+  // Disable the file cache on Quest devices. The cache throttle's maxRate
+  // (file_size/duration * 1.1) leaves insufficient headroom for high-bitrate
+  // internet streams, and the adaptive read factor makes larger caches
+  // counterproductive. Bypassing the cache layer lets the network stack and OS
+  // handle buffering directly, which eliminates cache-induced decoder starvation.
+  if (CAndroidUtils::IsQuestDevice())
+  {
+    auto setting = GetSettingsManager()->GetSetting(CSettings::SETTING_FILECACHE_BUFFERMODE);
+    if (!setting)
+      CLog::Log(LOGERROR, "Failed to load setting for: {}",
+                CSettings::SETTING_FILECACHE_BUFFERMODE);
+    else
+      std::static_pointer_cast<CSettingInt>(setting)->SetDefault(CACHE_BUFFER_MODE_NONE);
   }
 #endif
 
