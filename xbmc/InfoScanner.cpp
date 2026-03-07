@@ -17,7 +17,8 @@ bool CInfoScanner::HasNoMedia(const std::string &strDirectory) const
 {
   std::string noMediaFile = URIUtils::AddFileToFolder(strDirectory, ".nomedia");
 
-  if (!URIUtils::IsPlugin(strDirectory) && CFileUtils::Exists(noMediaFile))
+  if (!URIUtils::IsPlugin(strDirectory) && !URIUtils::IsDAV(strDirectory) &&
+      !URIUtils::IsHTTP(strDirectory) && CFileUtils::Exists(noMediaFile))
   {
     CLog::Log(LOGWARNING,
               "Skipping item '{}' with '.nomedia' file in parent directory, it won't be added to "
