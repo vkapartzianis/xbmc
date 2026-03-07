@@ -15,15 +15,13 @@ std::string CDemuxStreamAudio::GetStreamType()
   std::string strInfo;
   switch (codec)
   {
-    //! @todo: With ffmpeg >= 6.1 add new AC4 codec
     case AV_CODEC_ID_AC3:
       strInfo = "AC3 ";
       break;
     case AV_CODEC_ID_EAC3:
     {
-      //! @todo: With ffmpeg >= 6.1 add new atmos profile case
-      // "JOC" its EAC3 Atmos underlying profile, there is no standard codec name string
-      if (StringUtils::Contains(codecName, "JOC"))
+      if (profile == FF_PROFILE_EAC3_DDP_ATMOS ||
+          StringUtils::Contains(codecName, "JOC"))
         strInfo = "DD+ ATMOS ";
       else
         strInfo = "DD+ ";
@@ -31,7 +29,6 @@ std::string CDemuxStreamAudio::GetStreamType()
     }
     case AV_CODEC_ID_DTS:
     {
-      //! @todo: With ffmpeg >= 6.1 add new DTSX profile cases
       switch (profile)
       {
         case FF_PROFILE_DTS_96_24:
@@ -48,6 +45,12 @@ std::string CDemuxStreamAudio::GetStreamType()
           break;
         case FF_PROFILE_DTS_HD_HRA:
           strInfo = "DTS-HD HRA ";
+          break;
+        case FF_PROFILE_DTS_HD_MA_X:
+          strInfo = "DTS:X ";
+          break;
+        case FF_PROFILE_DTS_HD_MA_X_IMAX:
+          strInfo = "DTS:X IMAX ";
           break;
         default:
           strInfo = "DTS ";
@@ -126,7 +129,23 @@ std::string CDemuxStreamAudio::GetStreamType()
       break;
   }
 
-  strInfo += m_channelLayoutName;
+  // Use a clean channel layout name based on channel count (e.g. "5.1", "7.1.4")
+  // instead of FFmpeg's av_channel_layout_describe which includes speaker placement
+  // suffixes like "(side)"
+  static constexpr const char* defaultLayouts[] = {
+      "0.0", "1.0", "2.0", "2.1", "4.0", "5.0", "5.1", "6.1",
+      "7.1", "",    "5.1.4", "",   "7.1.4", "",   "9.1.4", "",  "9.1.6"};
+
+  if (iChannels > 0 &&
+      iChannels < static_cast<int>(sizeof(defaultLayouts) / sizeof(defaultLayouts[0])) &&
+      defaultLayouts[iChannels][0] != '\0')
+  {
+    strInfo += defaultLayouts[iChannels];
+  }
+  else if (iChannels > 0)
+  {
+    strInfo += std::to_string(iChannels) + "ch";
+  }
 
   return strInfo;
 }

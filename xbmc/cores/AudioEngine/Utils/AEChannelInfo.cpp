@@ -279,23 +279,23 @@ const char* CAEChannelInfo::GetChName(const enum AEChannel ch)
     "FROC", "BC" , "SL" , "SR" , "TFL" , "TFR" , "TFC" ,
     "TC"  , "TBL", "TBR", "TBC", "BLOC", "BROC",
 
-    /* p16v devices */
-    "UNKNOWN1" , "UNKNOWN2" , "UNKNOWN3" , "UNKNOWN4" ,
-    "UNKNOWN5" , "UNKNOWN6" , "UNKNOWN7" , "UNKNOWN8" ,
-    "UNKNOWN9" , "UNKNOWN10", "UNKNOWN11", "UNKNOWN12",
-    "UNKNOWN13", "UNKNOWN14", "UNKNOWN15", "UNKNOWN16",
-    "UNKNOWN17", "UNKNOWN18", "UNKNOWN19", "UNKNOWN20",
-    "UNKNOWN21", "UNKNOWN22", "UNKNOWN23", "UNKNOWN24",
-    "UNKNOWN25", "UNKNOWN26", "UNKNOWN27", "UNKNOWN28",
-    "UNKNOWN29", "UNKNOWN30", "UNKNOWN31", "UNKNOWN32",
-    "UNKNOWN33", "UNKNOWN34", "UNKNOWN35", "UNKNOWN36",
-    "UNKNOWN37", "UNKNOWN38", "UNKNOWN39", "UNKNOWN40",
-    "UNKNOWN41", "UNKNOWN42", "UNKNOWN43", "UNKNOWN44",
-    "UNKNOWN45", "UNKNOWN46", "UNKNOWN47", "UNKNOWN48",
-    "UNKNOWN49", "UNKNOWN50", "UNKNOWN51", "UNKNOWN52",
-    "UNKNOWN53", "UNKNOWN54", "UNKNOWN55", "UNKNOWN56",
-    "UNKNOWN57", "UNKNOWN58", "UNKNOWN59", "UNKNOWN60",
-    "UNKNOWN61", "UNKNOWN62", "UNKNOWN63", "UNKNOWN64"
+    /* audio object channels (e.g. Atmos objects) */
+    "AO1" , "AO2" , "AO3" , "AO4" ,
+    "AO5" , "AO6" , "AO7" , "AO8" ,
+    "AO9" , "AO10", "AO11", "AO12",
+    "AO13", "AO14", "AO15", "AO16",
+    "AO17", "AO18", "AO19", "AO20",
+    "AO21", "AO22", "AO23", "AO24",
+    "AO25", "AO26", "AO27", "AO28",
+    "AO29", "AO30", "AO31", "AO32",
+    "AO33", "AO34", "AO35", "AO36",
+    "AO37", "AO38", "AO39", "AO40",
+    "AO41", "AO42", "AO43", "AO44",
+    "AO45", "AO46", "AO47", "AO48",
+    "AO49", "AO50", "AO51", "AO52",
+    "AO53", "AO54", "AO55", "AO56",
+    "AO57", "AO58", "AO59", "AO60",
+    "AO61", "AO62", "AO63", "AO64"
   };
 
   return channels[ch];

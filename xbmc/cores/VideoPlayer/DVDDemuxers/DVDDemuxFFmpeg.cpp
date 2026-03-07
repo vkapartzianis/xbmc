@@ -2117,8 +2117,23 @@ std::string CDVDDemuxFFmpeg::GetStreamCodecName(int iStreamId)
         strName = "dtshd_ma";
       else if (stream->profile == FF_PROFILE_DTS_HD_HRA)
         strName = "dtshd_hra";
+      else if (stream->profile == FF_PROFILE_DTS_HD_MA_X)
+        strName = "dtshd_ma_x";
+      else if (stream->profile == FF_PROFILE_DTS_HD_MA_X_IMAX)
+        strName = "dtshd_ma_x_imax";
       else
         strName = "dca";
+
+      return strName;
+    }
+
+    /* use profile to determine EAC3 Atmos (JOC) */
+    if (stream->codec == AV_CODEC_ID_EAC3)
+    {
+      if (stream->profile == FF_PROFILE_EAC3_DDP_ATMOS)
+        strName = "eac3_ddp_atmos";
+      else
+        strName = "eac3";
 
       return strName;
     }
