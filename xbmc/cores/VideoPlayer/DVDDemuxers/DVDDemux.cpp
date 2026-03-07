@@ -8,7 +8,6 @@
 
 #include "DVDDemux.h"
 
-#include "utils/StringUtils.h"
 
 std::string CDemuxStreamAudio::GetStreamType()
 {
@@ -20,8 +19,7 @@ std::string CDemuxStreamAudio::GetStreamType()
       break;
     case AV_CODEC_ID_EAC3:
     {
-      if (profile == FF_PROFILE_EAC3_DDP_ATMOS ||
-          StringUtils::Contains(codecName, "JOC"))
+      if (profile == FF_PROFILE_EAC3_DDP_ATMOS)
         strInfo = "DD+ ATMOS ";
       else
         strInfo = "DD+ ";

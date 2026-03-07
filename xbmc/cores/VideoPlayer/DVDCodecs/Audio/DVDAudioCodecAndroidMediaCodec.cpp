@@ -179,13 +179,18 @@ bool CDVDAudioCodecAndroidMediaCodec::Open(CDVDStreamInfo &hints, CDVDCodecOptio
       break;
 
     case AV_CODEC_ID_EAC3:
-      if (!CServiceBroker::GetSettingsComponent()->GetSettings()->GetBool(
-              CSettings::SETTING_AUDIOOUTPUT_DOLBYATMOSDECODING))
+      if (hints.profile == FF_PROFILE_EAC3_DDP_ATMOS)
       {
-        CLog::Log(LOGDEBUG, "CDVDAudioCodecAndroidMediaCodec: Dolby Atmos decoding disabled in settings");
-        return false;
+        if (!CServiceBroker::GetSettingsComponent()->GetSettings()->GetBool(
+                CSettings::SETTING_AUDIOOUTPUT_DOLBYATMOSDECODING))
+        {
+          CLog::Log(LOGDEBUG, "CDVDAudioCodecAndroidMediaCodec: Dolby Atmos decoding disabled in settings");
+          return false;
+        }
+        m_mime = "audio/eac3-joc";
       }
-      m_mime = "audio/eac3-joc";
+      else
+        m_mime = "audio/eac3";
       m_formatname = "amc-eac3";
       break;
 
@@ -227,43 +232,6 @@ bool CDVDAudioCodecAndroidMediaCodec::Open(CDVDStreamInfo &hints, CDVDCodecOptio
           continue;
         }
         CLog::Log(LOGINFO, "CDVDAudioCodecAndroidMediaCodec: Selected audio decoder: {}",
-                  codecName);
-        break;
-      }
-    }
-  }
-
-  // If JOC MIME didn't find a decoder, fall back to standard EAC3
-  if (!m_codec && m_mime == "audio/eac3-joc")
-  {
-    CLog::Log(LOGINFO, "CDVDAudioCodecAndroidMediaCodec: No decoder for audio/eac3-joc, trying audio/eac3");
-    m_mime = "audio/eac3";
-
-    const std::vector<CJNIMediaCodecInfo> codecInfos =
-        CJNIMediaCodecList(CJNIMediaCodecList::REGULAR_CODECS).getCodecInfos();
-
-    for (const CJNIMediaCodecInfo& codec_info : codecInfos)
-    {
-      if (codec_info.isEncoder())
-        continue;
-
-      std::string codecName = codec_info.getName();
-      if (!IsDecoderWhitelisted(codecName))
-        continue;
-
-      std::vector<std::string> mimeTypes = codec_info.getSupportedTypes();
-      if (std::find(mimeTypes.begin(), mimeTypes.end(), m_mime) != mimeTypes.end())
-      {
-        m_codec = std::shared_ptr<CJNIMediaCodec>(
-            new CJNIMediaCodec(CJNIMediaCodec::createByCodecName(codecName)));
-        if (xbmc_jnienv()->ExceptionCheck())
-        {
-          xbmc_jnienv()->ExceptionDescribe();
-          xbmc_jnienv()->ExceptionClear();
-          m_codec = NULL;
-          continue;
-        }
-        CLog::Log(LOGINFO, "CDVDAudioCodecAndroidMediaCodec: Selected audio decoder (fallback): {}",
                   codecName);
         break;
       }
