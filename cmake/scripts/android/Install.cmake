@@ -30,6 +30,27 @@ unset(major)
 unset(minor)
 unset(patch)
 
+# Quest-specific manifest settings (set KODI_TARGET=quest at cmake configure time)
+if("$ENV{KODI_TARGET}" STREQUAL "quest")
+  set(QUEST_VR_FEATURE [[    <uses-feature
+        android:name="android.hardware.vr.headtracking"
+        android:required="true"
+        android:version="1" />]])
+  set(QUEST_RESIZABLE_ATTR [[        android:resizeableActivity="true"]])
+  set(QUEST_OCULUS_META [[        <meta-data
+            android:name="com.oculus.supportedDevices"
+            android:value="quest|quest2|quest3|quest3s|questpro" />]])
+  set(QUEST_ACTIVITY_LAYOUT [[
+            <layout
+                android:defaultHeight="864dp"
+                android:defaultWidth="1536dp" />]])
+else()
+  set(QUEST_VR_FEATURE "")
+  set(QUEST_RESIZABLE_ATTR "")
+  set(QUEST_OCULUS_META "")
+  set(QUEST_ACTIVITY_LAYOUT "")
+endif()
+
 set(package_files strings.xml
                   colors.xml
                   searchable.xml
