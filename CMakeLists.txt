@@ -359,6 +359,13 @@ copy_files_from_filelist_to_buildtree(${CMAKE_SOURCE_DIR}/cmake/installdata/comm
 
 list(APPEND SKINS "${CMAKE_SOURCE_DIR}/addons/skin.estuary\;${CMAKE_SOURCE_DIR}")
 
+# Arctic Fuse 2 ships a pre-built Textures.xbt (no raw media sources), so
+# copy_file_to_buildtree's .xbt filter skips it.  Copy it explicitly to the
+# build tree and add it to install_data so the bundle step carries it through.
+file(COPY "${CMAKE_SOURCE_DIR}/addons/skin.arctic.fuse.2/media/Textures.xbt"
+     DESTINATION "${CMAKE_BINARY_DIR}/addons/skin.arctic.fuse.2/media")
+list(APPEND install_data addons/skin.arctic.fuse.2/media/Textures.xbt)
+
 if(NOT ${CORE_SYSTEM_NAME} MATCHES "windows")
   file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/system/players/VideoPlayer)
 endif()
