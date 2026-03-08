@@ -24384,4 +24384,40 @@ msgctxt "#40436"
 msgid "50th Anniversary Edition"
 msgstr ""
 
+#. Label for WebDAV client settings category
+#: system/settings/settings.xml
+msgctxt "#40437"
+msgid "WebDAV client"
+msgstr ""
+
+#. Help string for WebDAV client settings category
+#: system/settings/settings.xml
+msgctxt "#40438"
+msgid "Configure WebDAV client settings."
+msgstr ""
+
+#. Label for WebDAV scan for external subtitles setting
+#: system/settings/settings.xml
+msgctxt "#40439"
+msgid "Scan for external subtitles"
+msgstr ""
+
+#. Help string for WebDAV scan for external subtitles setting
+#: system/settings/settings.xml
+msgctxt "#40440"
+msgid "If enabled, Kodi will scan the parent directory of a video file on WebDAV sources for matching subtitle files. Disable to speed up playback start on remote WebDAV sources."
+msgstr ""
+
+#. Label for WebDAV scan for external audio setting
+#: system/settings/settings.xml
+msgctxt "#40441"
+msgid "Scan for external audio tracks"
+msgstr ""
+
+#. Help string for WebDAV scan for external audio setting
+#: system/settings/settings.xml
+msgctxt "#40442"
+msgid "If enabled, Kodi will scan the parent directory of a video file on WebDAV sources for matching audio track files. Disable to speed up playback start on remote WebDAV sources."
+msgstr ""
+
 # 40000 to 40800 are reserved for Video Versions feature

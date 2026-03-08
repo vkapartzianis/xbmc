@@ -2523,6 +2523,20 @@
         </setting>
       </group>
     </category>
+    <category id="webdav" label="40437" help="40438">
+      <group id="1" label="16000">
+        <setting id="webdav.scansubtitles" type="boolean" label="40439" help="40440">
+          <level>1</level>
+          <default>true</default>
+          <control type="toggle" />
+        </setting>
+        <setting id="webdav.scanaudio" type="boolean" label="40441" help="40442">
+          <level>1</level>
+          <default>true</default>
+          <control type="toggle" />
+        </setting>
+      </group>
+    </category>
     <category id="filecache" label="37101" help="37102">
       <group id="1" label="16000">
         <setting id="filecache.buffermode" type="integer" label="37103" help="37104">

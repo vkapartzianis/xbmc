@@ -2071,9 +2071,19 @@ void CUtil::ScanForExternalSubtitles(const std::string& strMovie, std::vector<st
   GetVideoBasePathAndFileName(strMovie, strBasePath, strSubtitle);
 
   CFileItemList items;
-  const std::vector<std::string> common_sub_dirs = { "subs", "subtitles", "vobsubs", "sub", "vobsub", "subtitle" };
   const std::string subtitleExtensions = CServiceBroker::GetFileExtensionProvider().GetSubtitleExtensions();
-  GetItemsToScan(strBasePath, subtitleExtensions, common_sub_dirs, items);
+
+  // Skip scanning the video's own directory on WebDAV when disabled (avoids slow PROPFIND),
+  // but still check the custom subtitle path below.
+  const bool skipVideoDir = URIUtils::IsDAV(strMovie) &&
+      !CServiceBroker::GetSettingsComponent()->GetSettings()->GetBool(
+          CSettings::SETTING_WEBDAV_SCANSUBTITLES);
+
+  if (!skipVideoDir)
+  {
+    const std::vector<std::string> common_sub_dirs = { "subs", "subtitles", "vobsubs", "sub", "vobsub", "subtitle" };
+    GetItemsToScan(strBasePath, subtitleExtensions, common_sub_dirs, items);
+  }
 
   const std::string customPath = CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(CSettings::SETTING_SUBTITLES_CUSTOMPATH);
 
@@ -2354,6 +2364,11 @@ void CUtil::ScanForExternalAudio(const std::string& videoPath, std::vector<std::
    ||  item.IsLiveTV()
    ||  item.IsPVR()
    || !item.IsVideo())
+    return;
+
+  if (URIUtils::IsDAV(videoPath) &&
+      !CServiceBroker::GetSettingsComponent()->GetSettings()->GetBool(
+          CSettings::SETTING_WEBDAV_SCANAUDIO))
     return;
 
   std::string strBasePath;
