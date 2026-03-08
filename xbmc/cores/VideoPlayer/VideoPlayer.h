@@ -486,6 +486,7 @@ protected:
 
   ECacheState  m_caching;
   XbmcThreads::EndTime<> m_cachingTimer;
+  bool m_cacheStalledRecovery{false}; /*!< Set when rebuffering after a cache stall, triggers decoder flush on recovery */
 
   std::unique_ptr<CProcessInfo> m_processInfo;
 

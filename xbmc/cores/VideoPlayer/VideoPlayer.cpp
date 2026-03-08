@@ -630,6 +630,7 @@ CVideoPlayer::CVideoPlayer(IPlayerCallback& callback)
   m_playSpeed = DVD_PLAYSPEED_NORMAL;
   m_streamPlayerSpeed = DVD_PLAYSPEED_NORMAL;
   m_caching = CACHESTATE_DONE;
+  m_cacheStalledRecovery = false;
   m_HasVideo = false;
   m_HasAudio = false;
   m_UpdateStreamDetails = false;
@@ -1931,6 +1932,22 @@ void CVideoPlayer::HandlePlaySpeed()
 
   if (m_caching == CACHESTATE_DONE)
   {
+    // After recovering from a cache stall, flush the decoder and seek to a
+    // keyframe to clear any corrupted reference frames (e.g. HEVC P/B frames
+    // that depended on data lost during the stall).
+    if (m_cacheStalledRecovery)
+    {
+      m_cacheStalledRecovery = false;
+      CLog::Log(LOGDEBUG, "CVideoPlayer::HandlePlaySpeed - cache stall recovery, flushing decoder");
+      FlushBuffers(DVD_NOPTS_VALUE, true, true);
+      CDVDMsgPlayerSeek::CMode mode;
+      mode.time = (int)GetUpdatedTime();
+      mode.backward = true;
+      mode.accurate = false;
+      mode.sync = true;
+      m_messenger.Put(std::make_shared<CDVDMsgPlayerSeek>(mode));
+    }
+
     if (m_playSpeed == DVD_PLAYSPEED_NORMAL && !tolerateStall)
     {
       // take action if audio or video stream is stalled
@@ -1960,6 +1977,8 @@ void CVideoPlayer::HandlePlaySpeed()
           if (m_VideoPlayerAudio->GetLevel() <= 50 &&
               m_processInfo->GetLevelVQ() <= 50)
           {
+            CLog::Log(LOGDEBUG, "CVideoPlayer::HandlePlaySpeed - cache stall detected, will flush decoder on recovery");
+            m_cacheStalledRecovery = true;
             SetCaching(CACHESTATE_FULL);
           }
           else if (m_CurrentAudio.id >= 0 && m_CurrentAudio.inited &&
