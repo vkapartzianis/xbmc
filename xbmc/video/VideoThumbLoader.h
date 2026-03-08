@@ -10,11 +10,11 @@
 
 #include "FileItem.h"
 #include "ThumbLoader.h"
+#include "utils/StreamDetails.h"
 
 #include <map>
 #include <vector>
 
-class CStreamDetails;
 class CVideoDatabase;
 class EmbeddedArt;
 
@@ -76,6 +76,8 @@ public:
 protected:
   CVideoDatabase *m_videoDatabase;
   ArtCache m_artCache;
+  std::map<int, CStreamDetails> m_streamDetailsCache; /*!< Prefetched stream details keyed by fileId */
+  bool m_prefetchDone{false}; /*!< Whether batch prefetch has been done for current load */
 
   /*! \brief Tries to detect missing data/info from a file and adds those
    \param item The CFileItem to process

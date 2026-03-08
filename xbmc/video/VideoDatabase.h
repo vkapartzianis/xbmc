@@ -690,6 +690,11 @@ public:
   bool GetResumePoint(CVideoInfoTag& tag);
   bool GetStreamDetails(CFileItem& item);
   bool GetStreamDetails(CVideoInfoTag& tag) const;
+  /*! \brief Batch-fetch stream details for multiple file IDs in a single query
+   \param fileIds the file IDs to fetch stream details for
+   \return map of fileId -> CStreamDetails
+  */
+  std::map<int, CStreamDetails> GetStreamDetailsForFiles(const std::vector<int>& fileIds);
   bool GetDetailsByTypeAndId(CFileItem& item, VideoDbContentType type, int id);
   CVideoInfoTag GetDetailsByTypeAndId(VideoDbContentType type, int id);
 
@@ -969,6 +974,12 @@ public:
   void SetArtForItem(int mediaId, const MediaType &mediaType, const std::map<std::string, std::string> &art);
   bool GetArtForItem(int mediaId, const MediaType &mediaType, std::map<std::string, std::string> &art);
   std::string GetArtForItem(int mediaId, const MediaType &mediaType, const std::string &artType);
+  /*! \brief Batch-fetch art for multiple items of the same media type in a single query
+   \param mediaIds the media IDs to fetch art for
+   \param mediaType the type of media
+   \return map of mediaId -> ArtMap (type -> url)
+  */
+  std::map<int, std::map<std::string, std::string>> GetArtForItems(const std::vector<int>& mediaIds, const MediaType& mediaType);
 
   /*!
    * \brief Retrieve all art for the given video asset, with optional fallback to the art of the

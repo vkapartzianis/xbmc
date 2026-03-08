@@ -55,6 +55,56 @@ void CVideoThumbLoader::OnLoaderStart()
 {
   m_videoDatabase->Open();
   m_artCache.clear();
+  m_streamDetailsCache.clear();
+  m_prefetchDone = false;
+
+  // Batch prefetch stream details and art for all items that have DB info.
+  // This replaces thousands of individual queries with 2 bulk queries.
+  if (!m_vecItems.empty())
+  {
+    std::vector<int> fileIds;
+    // Collect items by media type for batch art queries
+    std::map<std::string, std::vector<int>> artItemsByType;
+
+    for (const auto& item : m_vecItems)
+    {
+      if (!item || item->m_bIsShareOrDrive || item->IsParentFolder())
+        continue;
+
+      if (item->HasVideoInfoTag())
+      {
+        const auto& tag = *item->GetVideoInfoTag();
+
+        // Collect file IDs for stream details prefetch
+        if (tag.m_iFileId >= 0 && !tag.HasStreamDetails())
+          fileIds.push_back(tag.m_iFileId);
+
+        // Collect media IDs for art prefetch
+        if (tag.m_iDbId > -1 && !tag.m_type.empty())
+          artItemsByType[tag.m_type].push_back(tag.m_iDbId);
+      }
+    }
+
+    if (!fileIds.empty())
+    {
+      CLog::Log(LOGDEBUG, "CVideoThumbLoader: prefetching stream details for {} files", fileIds.size());
+      m_streamDetailsCache = m_videoDatabase->GetStreamDetailsForFiles(fileIds);
+    }
+
+    for (const auto& [mediaType, ids] : artItemsByType)
+    {
+      if (!ids.empty())
+      {
+        CLog::Log(LOGDEBUG, "CVideoThumbLoader: prefetching art for {} {} items", ids.size(), mediaType);
+        auto artBatch = m_videoDatabase->GetArtForItems(ids, mediaType);
+        for (auto& [mediaId, artMap] : artBatch)
+          m_artCache[std::make_pair(mediaType, mediaId)] = std::move(artMap);
+      }
+    }
+
+    m_prefetchDone = true;
+  }
+
   CThumbLoader::OnLoaderStart();
 }
 
@@ -62,6 +112,8 @@ void CVideoThumbLoader::OnLoaderFinish()
 {
   m_videoDatabase->Close();
   m_artCache.clear();
+  m_streamDetailsCache.clear();
+  m_prefetchDone = false;
   CThumbLoader::OnLoaderFinish();
 }
 
@@ -183,7 +235,21 @@ bool CVideoThumbLoader::LoadItemCached(CFileItem* pItem)
     if ((pItem->HasVideoInfoTag() && pItem->GetVideoInfoTag()->m_iFileId >= 0) // file (or maybe folder) is in the database
     || (!pItem->m_bIsFolder && pItem->IsVideo())) // Some other video file for which we haven't yet got any database details
     {
-      if (m_videoDatabase->GetStreamDetails(*pItem))
+      bool found = false;
+      // Try prefetched cache first to avoid individual DB queries
+      if (m_prefetchDone && pItem->HasVideoInfoTag() && pItem->GetVideoInfoTag()->m_iFileId >= 0)
+      {
+        auto it = m_streamDetailsCache.find(pItem->GetVideoInfoTag()->m_iFileId);
+        if (it != m_streamDetailsCache.end())
+        {
+          pItem->GetVideoInfoTag()->m_streamDetails = it->second;
+          if (it->second.GetVideoDuration() > 0)
+            pItem->GetVideoInfoTag()->SetDuration(it->second.GetVideoDuration());
+          pItem->SetInvalid();
+          found = true;
+        }
+      }
+      if (!found && m_videoDatabase->GetStreamDetails(*pItem))
         pItem->SetInvalid();
     }
   }
@@ -422,21 +488,32 @@ bool CVideoThumbLoader::FillLibraryArt(CFileItem &item)
               artwork))
         item.AppendArt(artwork);
     }
-    else if (m_videoDatabase->GetArtForItem(tag.m_iDbId, tag.m_type, artwork))
+    else
     {
-      item.AppendArt(artwork);
-    }
-    else if (tag.m_type == "actor" && !tag.m_artist.empty() &&
-             item.GetProperty("musicvideomediatype") != MediaTypeArtist)
-    {
-      // Fallback to music library for actors without art
-      //! @todo Is m_artist set other than musicvideo? Remove this fallback if not.
-      CMusicDatabase database;
-      database.Open();
-      int idArtist = database.GetArtistByName(item.GetLabel());
-      if (database.GetArtForItem(idArtist, MediaTypeArtist, artwork))
-        item.SetArt(artwork);
-      database.Close();
+      // Check prefetched art cache first, fall back to individual query
+      auto cacheKey = std::make_pair(tag.m_type, tag.m_iDbId);
+      auto cacheIt = m_artCache.find(cacheKey);
+      if (cacheIt != m_artCache.end())
+        artwork = cacheIt->second;
+      else
+        m_videoDatabase->GetArtForItem(tag.m_iDbId, tag.m_type, artwork);
+
+      if (!artwork.empty())
+      {
+        item.AppendArt(artwork);
+      }
+      else if (tag.m_type == "actor" && !tag.m_artist.empty() &&
+               item.GetProperty("musicvideomediatype") != MediaTypeArtist)
+      {
+        // Fallback to music library for actors without art
+        //! @todo Is m_artist set other than musicvideo? Remove this fallback if not.
+        CMusicDatabase database;
+        database.Open();
+        int idArtist = database.GetArtistByName(item.GetLabel());
+        if (database.GetArtForItem(idArtist, MediaTypeArtist, artwork))
+          item.SetArt(artwork);
+        database.Close();
+      }
     }
 
     if (tag.m_type == MediaTypeEpisode || tag.m_type == MediaTypeSeason)

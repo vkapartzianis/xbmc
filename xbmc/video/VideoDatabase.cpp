@@ -4284,6 +4284,90 @@ bool CVideoDatabase::GetStreamDetails(CVideoInfoTag& tag) const
   return retVal;
 }
 
+std::map<int, CStreamDetails> CVideoDatabase::GetStreamDetailsForFiles(const std::vector<int>& fileIds)
+{
+  std::map<int, CStreamDetails> result;
+  if (fileIds.empty())
+    return result;
+
+  try
+  {
+    if (nullptr == m_pDB || nullptr == m_pDS)
+      return result;
+
+    // Build comma-separated list of file IDs
+    std::string idList;
+    for (size_t i = 0; i < fileIds.size(); i++)
+    {
+      if (i > 0)
+        idList += ",";
+      idList += std::to_string(fileIds[i]);
+    }
+
+    std::string strSQL = "SELECT * FROM streamdetails WHERE idFile IN (" + idList + ") ORDER BY idFile";
+    m_pDS->query(strSQL);
+
+    while (!m_pDS->eof())
+    {
+      int fileId = m_pDS->fv(0).get_asInt();
+      CStreamDetail::StreamType e = (CStreamDetail::StreamType)m_pDS->fv(1).get_asInt();
+
+      // Ensure entry exists in map
+      auto& details = result[fileId];
+
+      switch (e)
+      {
+      case CStreamDetail::VIDEO:
+        {
+          CStreamDetailVideo *p = new CStreamDetailVideo();
+          p->m_strCodec = m_pDS->fv(2).get_asString();
+          p->m_fAspect = m_pDS->fv(3).get_asFloat();
+          p->m_iWidth = m_pDS->fv(4).get_asInt();
+          p->m_iHeight = m_pDS->fv(5).get_asInt();
+          p->m_iDuration = m_pDS->fv(10).get_asInt();
+          p->m_strStereoMode = m_pDS->fv(11).get_asString();
+          p->m_strLanguage = m_pDS->fv(12).get_asString();
+          p->m_strHdrType = m_pDS->fv(13).get_asString();
+          details.AddStream(p);
+          break;
+        }
+      case CStreamDetail::AUDIO:
+        {
+          CStreamDetailAudio *p = new CStreamDetailAudio();
+          p->m_strCodec = m_pDS->fv(6).get_asString();
+          if (m_pDS->fv(7).get_isNull())
+            p->m_iChannels = -1;
+          else
+            p->m_iChannels = m_pDS->fv(7).get_asInt();
+          p->m_strLanguage = m_pDS->fv(8).get_asString();
+          details.AddStream(p);
+          break;
+        }
+      case CStreamDetail::SUBTITLE:
+        {
+          CStreamDetailSubtitle *p = new CStreamDetailSubtitle();
+          p->m_strLanguage = m_pDS->fv(9).get_asString();
+          details.AddStream(p);
+          break;
+        }
+      }
+
+      m_pDS->next();
+    }
+    m_pDS->close();
+
+    // Finalize all entries
+    for (auto& [fileId, details] : result)
+      details.DetermineBestStreams();
+  }
+  catch (...)
+  {
+    CLog::Log(LOGERROR, "{} failed", __FUNCTION__);
+  }
+
+  return result;
+}
+
 bool CVideoDatabase::GetResumePoint(CVideoInfoTag& tag)
 {
   if (tag.m_iFileId < 0)
@@ -4984,6 +5068,47 @@ bool CVideoDatabase::GetArtForItem(int mediaId, const MediaType &mediaType, std:
     CLog::Log(LOGERROR, "{}({}) failed", __FUNCTION__, mediaId);
   }
   return false;
+}
+
+std::map<int, std::map<std::string, std::string>> CVideoDatabase::GetArtForItems(
+    const std::vector<int>& mediaIds, const MediaType& mediaType)
+{
+  std::map<int, std::map<std::string, std::string>> result;
+  if (mediaIds.empty())
+    return result;
+
+  try
+  {
+    if (nullptr == m_pDB || nullptr == m_pDS2)
+      return result;
+
+    // Build comma-separated list of media IDs
+    std::string idList;
+    for (size_t i = 0; i < mediaIds.size(); i++)
+    {
+      if (i > 0)
+        idList += ",";
+      idList += std::to_string(mediaIds[i]);
+    }
+
+    std::string sql = PrepareSQL("SELECT media_id,type,url FROM art WHERE media_id IN (%s) AND media_type='%s'",
+                                 idList.c_str(), mediaType.c_str());
+
+    m_pDS2->query(sql);
+    while (!m_pDS2->eof())
+    {
+      int mediaId = m_pDS2->fv(0).get_asInt();
+      result[mediaId].insert(std::make_pair(m_pDS2->fv(1).get_asString(), m_pDS2->fv(2).get_asString()));
+      m_pDS2->next();
+    }
+    m_pDS2->close();
+  }
+  catch (...)
+  {
+    CLog::Log(LOGERROR, "{} failed", __FUNCTION__);
+  }
+
+  return result;
 }
 
 bool CVideoDatabase::GetArtForAsset(int assetId,
