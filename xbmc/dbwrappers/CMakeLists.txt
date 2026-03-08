@@ -11,8 +11,10 @@ set(HEADERS Database.h
             sqlitedataset.h)
 
 if(TARGET MySqlClient::MySqlClient OR TARGET MariaDBClient::MariaDBClient)
-  list(APPEND SOURCES mysqldataset.cpp)
-  list(APPEND HEADERS mysqldataset.h)
+  list(APPEND SOURCES MysqlConnectionPool.cpp
+                      mysqldataset.cpp)
+  list(APPEND HEADERS MysqlConnectionPool.h
+                      mysqldataset.h)
 endif()
 
 core_add_library(dbwrappers)

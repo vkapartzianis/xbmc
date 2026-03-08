@@ -13,7 +13,10 @@
 #include "ServiceBroker.h"
 #include "filesystem/SpecialProtocol.h"
 #if defined(HAS_MYSQL) || defined(HAS_MARIADB)
+#include "MysqlConnectionPool.h"
 #include "mysqldataset.h"
+
+#include "network/DNSNameCache.h"
 #endif
 #include "profiles/ProfileManager.h"
 #include "settings/AdvancedSettings.h"
@@ -622,6 +625,39 @@ bool CDatabase::Connect(const std::string& dbName, const DatabaseSettings& dbSet
   m_pDS.reset(m_pDB->CreateDataset());
   m_pDS2.reset(m_pDB->CreateDataset());
 
+#if defined(HAS_MYSQL) || defined(HAS_MARIADB)
+  if (dbSettings.type == "mysql")
+  {
+    // Resolve DNS once here so the pool key is consistent between checkout and return.
+    // MysqlDatabase::connect() also resolves DNS but this ensures the host member is
+    // already resolved before any pool interaction.
+    std::string resolvedHost;
+    if (!StringUtils::EqualsNoCase(dbSettings.host, "localhost") &&
+        CDNSNameCache::Lookup(dbSettings.host, resolvedHost))
+    {
+      m_pDB->setHostName(resolvedHost.c_str());
+    }
+
+    // Try to reuse a pooled connection (only when not creating a new database)
+    if (!create)
+    {
+      MYSQL* pooled = CMysqlConnectionPool::GetInstance().Checkout(
+          m_pDB->getHostName(), m_pDB->getPort(), dbName);
+      if (pooled)
+      {
+        auto* mysqlDb = static_cast<dbiplus::MysqlDatabase*>(m_pDB.get());
+        if (mysqlDb->attachHandle(pooled, dbName.c_str()))
+        {
+          m_openCount = 1;
+          return true;
+        }
+        // attachHandle failed — close the handle and fall through to fresh connect
+        mysql_close(pooled);
+      }
+    }
+  }
+#endif
+
   if (m_pDB->connect(create) != DB_CONNECTION_OK)
     return false;
 
@@ -696,6 +732,24 @@ void CDatabase::Close()
     return;
   if (nullptr != m_pDS)
     m_pDS->close();
+
+#if defined(HAS_MYSQL) || defined(HAS_MARIADB)
+  // Return MySQL connections to the pool instead of closing them
+  if (!m_sqlite && !m_pDB->in_transaction())
+  {
+    auto* mysqlDb = static_cast<dbiplus::MysqlDatabase*>(m_pDB.get());
+    // Read pool key fields before detaching (host/port/db strings are unaffected by detach)
+    std::string poolHost = m_pDB->getHostName();
+    std::string poolPort = m_pDB->getPort();
+    std::string poolDb = m_pDB->getDatabase();
+    MYSQL* h = mysqlDb->detachHandle();
+    if (h)
+    {
+      CMysqlConnectionPool::GetInstance().Return(poolHost, poolPort, poolDb, h);
+    }
+  }
+#endif
+
   m_pDB->disconnect();
   m_pDB.reset();
   m_pDS.reset();

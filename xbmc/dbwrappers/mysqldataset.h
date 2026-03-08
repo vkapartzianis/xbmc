@@ -42,6 +42,16 @@ public:
 
   /* func. returns connection handle with MySQL-server */
   MYSQL* getHandle() { return conn; }
+  /* detach the connection handle without closing it (for connection pooling) */
+  MYSQL* detachHandle()
+  {
+    MYSQL* h = conn;
+    conn = nullptr;
+    active = false;
+    return h;
+  }
+  /* attach a pre-configured pooled connection handle */
+  bool attachHandle(MYSQL* pooledConn, const char* dbName);
   /* func. returns current status about MySQL-server connection */
   int status() override;
   int setErr(int err_code, const char* qry) override;

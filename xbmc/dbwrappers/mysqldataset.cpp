@@ -283,6 +283,27 @@ void MysqlDatabase::disconnect(void)
   active = false;
 }
 
+bool MysqlDatabase::attachHandle(MYSQL* pooledConn, const char* dbName)
+{
+  if (!pooledConn)
+    return false;
+
+  // Close any existing connection (shouldn't happen on a fresh object)
+  disconnect();
+
+  conn = pooledConn;
+
+  if (mysql_select_db(conn, dbName) != 0)
+  {
+    CLog::Log(LOGERROR, "MysqlDatabase::attachHandle: mysql_select_db failed for {}", dbName);
+    conn = nullptr;
+    return false;
+  }
+
+  active = true;
+  return true;
+}
+
 int MysqlDatabase::create()
 {
   return connect(true);
