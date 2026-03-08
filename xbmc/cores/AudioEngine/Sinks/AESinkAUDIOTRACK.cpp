@@ -1118,7 +1118,6 @@ void CAESinkAUDIOTRACK::EnumerateDevicesEx(AEDeviceInfoList &list, bool force)
 
 void CAESinkAUDIOTRACK::UpdateAvailablePassthroughCapabilities(bool isRaw)
 {
-  m_info.m_deviceType = AE_DEVTYPE_HDMI;
   m_info.m_wantsIECPassthrough = false;
   m_info.m_dataFormats.push_back(AE_FMT_RAW);
   m_info.m_streamTypes.clear();
@@ -1232,6 +1231,10 @@ void CAESinkAUDIOTRACK::UpdateAvailablePassthroughCapabilities(bool isRaw)
       }
     }
   }
+
+  // Only report as HDMI if passthrough formats were actually verified
+  if (!m_info.m_streamTypes.empty())
+    m_info.m_deviceType = AE_DEVTYPE_HDMI;
 }
 
 void CAESinkAUDIOTRACK::UpdateAvailablePCMCapabilities()
