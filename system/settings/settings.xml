@@ -2535,6 +2535,11 @@
           <default>true</default>
           <control type="toggle" />
         </setting>
+        <setting id="webdav.extractinfo" type="boolean" label="40443" help="40444">
+          <level>1</level>
+          <default>true</default>
+          <control type="toggle" />
+        </setting>
       </group>
     </category>
     <category id="filecache" label="37101" help="37102">

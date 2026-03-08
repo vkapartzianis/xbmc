@@ -364,6 +364,7 @@ public:
   static constexpr auto SETTING_SERVICES_WSDISCOVERY = "services.wsdiscovery";
   static constexpr auto SETTING_WEBDAV_SCANSUBTITLES = "webdav.scansubtitles";
   static constexpr auto SETTING_WEBDAV_SCANAUDIO = "webdav.scanaudio";
+  static constexpr auto SETTING_WEBDAV_EXTRACTINFO = "webdav.extractinfo";
   static constexpr auto SETTING_VIDEOSCREEN_MONITOR = "videoscreen.monitor";
   static constexpr auto SETTING_VIDEOSCREEN_SCREEN = "videoscreen.screen";
   static constexpr auto SETTING_VIDEOSCREEN_WHITELIST = "videoscreen.whitelist";

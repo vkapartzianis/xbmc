@@ -310,7 +310,10 @@ bool CVideoThumbLoader::LoadItemLookup(CFileItem* pItem)
 
     // flag extraction mostly for non-library items - should end up somewhere else,
     // like a VideoInfoLoader if it existed
-    if (settings->GetBool(CSettings::SETTING_MYVIDEOS_EXTRACTFLAGS) &&
+    const bool skipWebDavExtract =
+        URIUtils::IsDAV(pItem->GetDynPath()) &&
+        !settings->GetBool(CSettings::SETTING_WEBDAV_EXTRACTINFO);
+    if (settings->GetBool(CSettings::SETTING_MYVIDEOS_EXTRACTFLAGS) && !skipWebDavExtract &&
         CDVDFileInfo::CanExtract(*pItem) &&
         (!pItem->HasVideoInfoTag() || !pItem->GetVideoInfoTag()->HasStreamDetails()))
     {

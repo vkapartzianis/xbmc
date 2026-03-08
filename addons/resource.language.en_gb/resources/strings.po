@@ -24420,4 +24420,16 @@ msgctxt "#40442"
 msgid "If enabled, Kodi will scan the parent directory of a video file on WebDAV sources for matching audio track files. Disable to speed up playback start on remote WebDAV sources."
 msgstr ""
 
+#. Label for WebDAV extract video information setting
+#: system/settings/settings.xml
+msgctxt "#40443"
+msgid "Extract video information from files"
+msgstr ""
+
+#. Help string for WebDAV extract video information setting
+#: system/settings/settings.xml
+msgctxt "#40444"
+msgid "If enabled, Kodi will open video files on WebDAV sources to extract stream details such as codec, resolution, and audio tracks. Disable to speed up library browsing when stream details are already provided by the scraper."
+msgstr ""
+
 # 40000 to 40800 are reserved for Video Versions feature
