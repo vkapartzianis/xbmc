@@ -3026,6 +3026,12 @@
         </dependencies>
         <control type="toggle" />
       </setting>
+      <setting id="videoscreen.guihdrsurface" type="boolean" label="39202" help="39203">
+        <requirement>HAS_MEDIACODEC</requirement>
+        <level>2</level>
+        <default>false</default>
+        <control type="toggle" />
+      </setting>
       <setting id="videoscreen.guipeakluminance" type="integer" label="36097" help="36547">
         <requirement>
           <or>

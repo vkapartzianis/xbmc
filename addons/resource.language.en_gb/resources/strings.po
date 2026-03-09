@@ -23863,6 +23863,18 @@ msgctxt "#39201"
 msgid "HDR10+"
 msgstr ""
 
+#. Title of "Prefer HDR GUI surface" setting
+#: system/settings/settings.xml
+msgctxt "#39202"
+msgid "Prefer HDR GUI surface"
+msgstr ""
+
+#. Help text for setting "Prefer HDR GUI surface" of label #39202
+#: system/settings/settings.xml
+msgctxt "#39203"
+msgid "Prefer the FP16 HDR surface for GUI rendering. Some devices support HDR displays and FP16 surfaces but lack the BT.2020 PQ colorspace extension required for automatic HDR activation. This setting forces use of the HDR surface when available, improving alpha blending, color gradients, and transparency quality. Requires restart."
+msgstr ""
+
 # 40000 to 40800 are reserved for Video Versions feature
 
 #. Generic video versions label (plural)

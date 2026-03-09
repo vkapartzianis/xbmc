@@ -1876,20 +1876,59 @@ void CDVDVideoCodecAndroidMediaCodec::ConfigureOutputFormat(CJNIMediaFormat& med
   if (!crop_bottom)
     crop_bottom = height-1;
 
+  int color_range = -1;
+  int color_standard = -1;
+  int color_transfer = -1;
+
+  if (CJNIBase::GetSDKVersion() >= 24)
+  {
+    if (mediaformat.containsKey(CJNIMediaFormat::KEY_COLOR_RANGE))
+      color_range = mediaformat.getInteger(CJNIMediaFormat::KEY_COLOR_RANGE);
+    if (mediaformat.containsKey(CJNIMediaFormat::KEY_COLOR_STANDARD))
+      color_standard = mediaformat.getInteger(CJNIMediaFormat::KEY_COLOR_STANDARD);
+    if (mediaformat.containsKey(CJNIMediaFormat::KEY_COLOR_TRANSFER))
+      color_transfer = mediaformat.getInteger(CJNIMediaFormat::KEY_COLOR_TRANSFER);
+  }
+
   // clear any jni exceptions
   if (xbmc_jnienv()->ExceptionCheck())
     xbmc_jnienv()->ExceptionClear();
+
+  {
+    auto rangeName = [](int r) -> std::string {
+      if (r == CJNIMediaFormat::COLOR_RANGE_FULL) return "Full";
+      if (r == CJNIMediaFormat::COLOR_RANGE_LIMITED) return "Limited";
+      return r < 0 ? "N/A" : std::to_string(r);
+    };
+    auto standardName = [](int s) -> std::string {
+      if (s == CJNIMediaFormat::COLOR_STANDARD_BT709) return "BT.709";
+      if (s == CJNIMediaFormat::COLOR_STANDARD_BT2020) return "BT.2020";
+      return s < 0 ? "N/A" : std::to_string(s);
+    };
+    auto transferName = [](int t) -> std::string {
+      if (t == CJNIMediaFormat::COLOR_TRANSFER_LINEAR) return "Linear";
+      if (t == CJNIMediaFormat::COLOR_TRANSFER_SDR_VIDEO) return "SDR";
+      if (t == CJNIMediaFormat::COLOR_TRANSFER_ST2084) return "ST2084 (PQ)";
+      if (t == CJNIMediaFormat::COLOR_TRANSFER_HLG) return "HLG";
+      return t < 0 ? "N/A" : std::to_string(t);
+    };
+
+    CLog::Log(LOGINFO,
+              "CDVDVideoCodecAndroidMediaCodec:: output: {}x{}, color-format({}), "
+              "range({}), standard({}), transfer({})",
+              width, height, color_format, rangeName(color_range),
+              standardName(color_standard), transferName(color_transfer));
+    CLog::Log(LOGINFO, "CDVDVideoCodecAndroidMediaCodec:: output format: {}",
+              mediaformat.toString());
+  }
 
   if (CServiceBroker::GetLogging().CanLogComponent(LOGVIDEO))
   {
     CLog::Log(LOGDEBUG,
               "CDVDVideoCodecAndroidMediaCodec:: "
-              "width({}), height({}), stride({}), slice-height({}), color-format({})",
-              width, height, stride, slice_height, color_format);
-    CLog::Log(LOGDEBUG,
-              "CDVDVideoCodecAndroidMediaCodec:: "
+              "stride({}), slice-height({}), "
               "crop-left({}), crop-top({}), crop-right({}), crop-bottom({})",
-              crop_left, crop_top, crop_right, crop_bottom);
+              stride, slice_height, crop_left, crop_top, crop_right, crop_bottom);
 
     if (m_render_surface)
       CLog::Log(LOGDEBUG, "CDVDVideoCodecAndroidMediaCodec:: Multi-Surface Rendering");

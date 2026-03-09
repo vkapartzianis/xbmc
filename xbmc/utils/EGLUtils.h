@@ -188,7 +188,9 @@ public:
   bool CreatePlatformDisplay(void* nativeDisplay, EGLNativeDisplayType nativeDisplayLegacy);
 
   void SurfaceAttrib(EGLint attribute, EGLint value);
-  bool CreateSurface(EGLNativeWindowType nativeWindow, EGLint HDRcolorSpace = EGL_NONE);
+  bool CreateSurface(EGLNativeWindowType nativeWindow,
+                     EGLint HDRcolorSpace = EGL_NONE,
+                     bool forceHDRConfig = false);
   bool CreatePlatformSurface(void* nativeWindow, EGLNativeWindowType nativeWindowLegacy);
   bool InitializeDisplay(EGLint renderingApi);
   bool ChooseConfig(EGLint renderableType, EGLint visualId = 0, bool hdr = false);

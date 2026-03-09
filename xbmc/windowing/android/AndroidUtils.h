@@ -46,4 +46,5 @@ protected:
 
 private:
   static void LogDisplaySupportedHdrTypes();
+  static void LogDolbyVisionCapabilities();
 };

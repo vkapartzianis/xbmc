@@ -11,6 +11,8 @@
 #include "ServiceBroker.h"
 #include "VideoSyncAndroid.h"
 #include "cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodec.h"
+#include "settings/Settings.h"
+#include "settings/SettingsComponent.h"
 #include "threads/SingleLock.h"
 #include "utils/log.h"
 #include "windowing/WindowSystemFactory.h"
@@ -177,14 +179,33 @@ std::unique_ptr<CVideoSync> CWinSystemAndroidGLESContext::GetVideoSync(CVideoRef
 
 bool CWinSystemAndroidGLESContext::CreateSurface()
 {
+  bool forceHDRConfig = false;
+  if (m_hasHDRConfig)
+  {
+    const auto settings = CServiceBroker::GetSettingsComponent()->GetSettings();
+    if (settings && settings->GetBool(CSettings::SETTING_VIDEOSCREEN_GUIHDRSURFACE))
+      forceHDRConfig = true;
+  }
+
+  if (forceHDRConfig)
+    CLog::Log(LOGINFO, "CWinSystemAndroidGLESContext::CreateSurface: using FP16 HDR surface");
+
   if (!m_pGLContext.CreateSurface(static_cast<EGLNativeWindowType>(m_nativeWindow->m_window),
-                                  m_HDRColorSpace))
+                                  m_HDRColorSpace, forceHDRConfig))
   {
     if (m_HDRColorSpace != EGL_NONE)
     {
       m_HDRColorSpace = EGL_NONE;
       m_displayMetadata = nullptr;
       m_lightMetadata = nullptr;
+      if (!m_pGLContext.CreateSurface(static_cast<EGLNativeWindowType>(m_nativeWindow->m_window)))
+        return false;
+    }
+    else if (forceHDRConfig)
+    {
+      CLog::Log(LOGWARNING,
+                "CWinSystemAndroidGLESContext::CreateSurface: FP16 HDR surface failed, "
+                "falling back to SDR");
       if (!m_pGLContext.CreateSurface(static_cast<EGLNativeWindowType>(m_nativeWindow->m_window)))
         return false;
     }

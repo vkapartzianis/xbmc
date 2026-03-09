@@ -18,9 +18,15 @@ int StreamUtils::GetCodecPriority(const std::string &codec)
     return 7;
   if (codec == "truehd") // Dolby TrueHD
     return 6;
+  if (codec == "dtshd_ma_x_imax") // DTS-HD Master Audio with DTS:X IMAX
+    return 6;
+  if (codec == "dtshd_ma_x") // DTS-HD Master Audio with DTS:X
+    return 6;
   if (codec == "dtshd_ma") // DTS-HD Master Audio (previously known as DTS++)
     return 5;
   if (codec == "dtshd_hra") // DTS-HD High Resolution Audio
+    return 4;
+  if (codec == "eac3_ddp_atmos") // Dolby Digital Plus with Atmos
     return 4;
   if (codec == "eac3") // Dolby Digital Plus
     return 3;

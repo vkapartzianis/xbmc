@@ -227,6 +227,7 @@ CAndroidUtils::CAndroidUtils()
       this, {CAndroidUtils::SETTING_LIMITGUI});
 
   LogDisplaySupportedHdrTypes();
+  LogDolbyVisionCapabilities();
 }
 
 bool CAndroidUtils::GetNativeResolution(RESOLUTION_INFO* res) const
@@ -423,6 +424,62 @@ void CAndroidUtils::LogDisplaySupportedHdrTypes()
 
   CLog::Log(LOGDEBUG, "CAndroidUtils: Display supported HDR types:{}",
             text.empty() ? " None" : text);
+}
+
+void CAndroidUtils::LogDolbyVisionCapabilities()
+{
+  const std::vector<CJNIMediaCodecInfo> codecInfos =
+      CJNIMediaCodecList(CJNIMediaCodecList::REGULAR_CODECS).getCodecInfos();
+
+  for (const CJNIMediaCodecInfo& codec_info : codecInfos)
+  {
+    if (codec_info.isEncoder())
+      continue;
+
+    const std::vector<std::string> types = codec_info.getSupportedTypes();
+    if (std::find(types.begin(), types.end(), "video/dolby-vision") == types.end())
+      continue;
+
+    const std::string codecName = codec_info.getName();
+    CLog::Log(LOGINFO, "CAndroidUtils: Dolby Vision decoder: {}", codecName);
+
+    const CJNIMediaCodecInfoCodecCapabilities caps =
+        codec_info.getCapabilitiesForType("video/dolby-vision");
+    const std::vector<CJNIMediaCodecInfoCodecProfileLevel> profileLevels = caps.profileLevels();
+
+    for (const CJNIMediaCodecInfoCodecProfileLevel& pl : profileLevels)
+    {
+      const int profile = pl.profile();
+      const int level = pl.level();
+      std::string profileName = "Unknown";
+
+      if (profile == CJNIMediaCodecInfoCodecProfileLevel::DolbyVisionProfileDvavPer)
+        profileName = "DvavPer (Profile 0)";
+      else if (profile == CJNIMediaCodecInfoCodecProfileLevel::DolbyVisionProfileDvavPen)
+        profileName = "DvavPen (Profile 1/deprecated)";
+      else if (profile == CJNIMediaCodecInfoCodecProfileLevel::DolbyVisionProfileDvheDer)
+        profileName = "DvheDer (Profile 2)";
+      else if (profile == CJNIMediaCodecInfoCodecProfileLevel::DolbyVisionProfileDvheDen)
+        profileName = "DvheDen (Profile 3)";
+      else if (profile == CJNIMediaCodecInfoCodecProfileLevel::DolbyVisionProfileDvheDtr)
+        profileName = "DvheDtr (Profile 4)";
+      else if (profile == CJNIMediaCodecInfoCodecProfileLevel::DolbyVisionProfileDvheStn)
+        profileName = "DvheStn (Profile 5)";
+      else if (profile == CJNIMediaCodecInfoCodecProfileLevel::DolbyVisionProfileDvheDtb)
+        profileName = "DvheDtb (Profile 6)";
+      else if (profile == CJNIMediaCodecInfoCodecProfileLevel::DolbyVisionProfileDvheDth)
+        profileName = "DvheDth (Profile 7)";
+      else if (profile == CJNIMediaCodecInfoCodecProfileLevel::DolbyVisionProfileDvheSt)
+        profileName = "DvheSt (Profile 8)";
+      else if (profile == CJNIMediaCodecInfoCodecProfileLevel::DolbyVisionProfileDvavSe)
+        profileName = "DvavSe (Profile 9)";
+      else if (profile == CJNIMediaCodecInfoCodecProfileLevel::DolbyVisionProfileDvav110)
+        profileName = "Dvav110 (Profile 10)";
+
+      CLog::Log(LOGINFO, "CAndroidUtils:   DV profile: {} (id={}), level: {}", profileName,
+                profile, level);
+    }
+  }
 }
 
 CHDRCapabilities CAndroidUtils::GetDisplayHDRCapabilities()
