@@ -55,10 +55,12 @@ void CApplicationPlayerCallback::OnPlayBackStarted(const CFileItem& file)
 
   // check if VideoPlayer should set file item stream details from its current streams
   const bool isBlu_dvd_image_or_stream = (URIUtils::IsBluray(file.GetPath()) || file.IsDVDFile() ||
-                                          file.IsDiscImage() || file.IsInternetStream());
+                                          file.IsDiscImage() || file.IsInternetStream() ||
+                                          file.IsType(".strm"));
 
   const bool hasNoStreamDetails =
-      (!file.HasVideoInfoTag() || !file.GetVideoInfoTag()->HasStreamDetails());
+      (!file.HasVideoInfoTag() || !file.GetVideoInfoTag()->HasStreamDetails() ||
+       file.GetVideoInfoTag()->m_streamDetails.GetVideoCodec().empty());
 
   if (file.GetProperty("get_stream_details_from_player").asBoolean() ||
       (hasNoStreamDetails && isBlu_dvd_image_or_stream))
