@@ -35,6 +35,8 @@
 #include "URL.h"
 #include "platform/android/activity/XBMCApp.h"
 #include "utils/log.h"
+#include "video/Bookmark.h"
+#include "video/VideoDatabase.h"
 #endif
 
 #include <utility>
@@ -644,18 +646,32 @@ bool CVideoPlayWithVRPlayer::Execute(const std::shared_ptr<CFileItem>& item) con
   const bool useVfs =
       settings->GetBool(CSettings::SETTING_VIDEOPLAYER_3DEXTERNALPLAYERVFS);
 
+  // Look up resume bookmark for this file
+  std::string dbPath = fileUri;
+  int positionMs = 0;
+  {
+    CVideoDatabase db;
+    if (db.Open())
+    {
+      CBookmark bookmark;
+      if (db.GetResumeBookMark(dbPath, bookmark) && bookmark.IsPartWay())
+        positionMs = static_cast<int>(bookmark.timeInSeconds * 1000);
+      db.Close();
+    }
+  }
+
   auto resolved = VIDEO_UTILS::ResolveForExternalPlayer(fileUri, useVfs);
-  fileUri = resolved.uri;
+  std::string launchUri = resolved.uri;
   std::string flags = resolved.flags;
 
-  CLog::Log(LOGINFO, "CVideoPlayWithVRPlayer: Launching '{}' with uri: {}",
-            vrPlayer, CURL::GetRedacted(fileUri));
+  CLog::Log(LOGINFO, "CVideoPlayWithVRPlayer: Launching '{}' with uri: {}, position: {}ms",
+            vrPlayer, CURL::GetRedacted(launchUri), positionMs);
 
   if (useVfs)
     CXBMCApp::Get().StartVfsService();
 
-  bool launched = CXBMCApp::StartActivity(
-      vrPlayer, "android.intent.action.VIEW", "video/*", fileUri, flags);
+  bool launched = CXBMCApp::Get().LaunchVRPlayer(
+      vrPlayer, launchUri, flags, dbPath, positionMs);
 
   if (!launched)
   {

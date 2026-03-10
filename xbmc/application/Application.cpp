@@ -2567,7 +2567,6 @@ bool CApplication::PlayFile(CFileItem item, const std::string& player, bool bRes
 
         if (!stereoMode.empty() && stereoMode != "mono")
         {
-          // Build intent extras with stereo mode info
           std::string extras = StringUtils::Format(
               R"([{{"type":"string","key":"stereo_mode","value":"{}"}}])", stereoMode);
 
@@ -2575,28 +2574,34 @@ bool CApplication::PlayFile(CFileItem item, const std::string& player, bool bRes
           if (fileUri.empty())
             fileUri = item.GetPath();
 
+          // Look up resume bookmark
+          std::string dbPath = fileUri;
+          int positionMs = 0;
+          if (item.HasVideoInfoTag())
+          {
+            const CBookmark& bookmark = item.GetVideoInfoTag()->GetResumePoint();
+            if (bookmark.IsPartWay())
+              positionMs = static_cast<int>(bookmark.timeInSeconds * 1000);
+          }
+
           const bool useVfs =
               CServiceBroker::GetSettingsComponent()->GetSettings()->GetBool(
                   CSettings::SETTING_VIDEOPLAYER_3DEXTERNALPLAYERVFS);
 
           auto resolved = VIDEO_UTILS::ResolveForExternalPlayer(fileUri, useVfs);
-          fileUri = resolved.uri;
+          std::string launchUri = resolved.uri;
           std::string flags = resolved.flags;
 
           CLog::Log(LOGINFO,
-                    "CApplication::PlayFile: Launching external 3D player '{}' for "
-                    "stereoscopic content (mode: {}, uri: {})",
-                    externalPlayer, stereoMode, CURL::GetRedacted(fileUri));
+                    "CApplication::PlayFile: Launching external VR player '{}' for "
+                    "stereoscopic content (mode: {}, uri: {}, position: {}ms)",
+                    externalPlayer, stereoMode, CURL::GetRedacted(launchUri), positionMs);
 
-          // Pass action as 'intent' param to create a fresh ACTION_VIEW intent
-          // (not via getLaunchIntentForPackage which locks the component to the
-          // main activity). setPackage() in StartActivity targets the chosen app.
           if (useVfs)
             CXBMCApp::Get().StartVfsService();
 
-          bool launched = CXBMCApp::StartActivity(
-              externalPlayer, "android.intent.action.VIEW", "video/*", fileUri,
-              flags, extras);
+          bool launched = CXBMCApp::Get().LaunchVRPlayer(
+              externalPlayer, launchUri, flags, dbPath, positionMs, extras);
 
           if (launched)
             return true;
@@ -2605,7 +2610,7 @@ bool CApplication::PlayFile(CFileItem item, const std::string& player, bool bRes
             CXBMCApp::Get().StopVfsService();
 
           CLog::Log(LOGWARNING,
-                    "CApplication::PlayFile: Failed to launch external 3D player '{}', "
+                    "CApplication::PlayFile: Failed to launch external VR player '{}', "
                     "falling back to internal playback",
                     externalPlayer);
         }

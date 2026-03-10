@@ -173,6 +173,13 @@ public:
   void StartVfsService();
   void StopVfsService();
 
+  bool LaunchVRPlayer(const std::string& package,
+                      const std::string& dataURI,
+                      const std::string& flags,
+                      const std::string& filePath,
+                      int positionMs = 0,
+                      const std::string& extras = std::string());
+
   /*!
    * \brief If external storage is available, it returns the path for the external storage (for the specified type)
    * \param path will contain the path of the external storage (for the specified type)
@@ -276,6 +283,8 @@ private:
   int m_exitCode{0};
   bool m_bResumePlayback{false};
   std::thread m_thread;
+  std::string m_vrPlayerFilePath; // original file path for resume bookmark on VR player return
+  static constexpr int VR_PLAYER_REQUEST_CODE = 1001;
   mutable CCriticalSection m_applicationsMutex;
   mutable std::vector<androidPackage> m_applications;
 

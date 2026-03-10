@@ -47,6 +47,8 @@
 #include "utils/URIUtils.h"
 #include "utils/Variant.h"
 #include "utils/log.h"
+#include "video/Bookmark.h"
+#include "video/VideoDatabase.h"
 #include "video/VideoInfoTag.h"
 #include "windowing/GraphicContext.h"
 #include "windowing/WinEvents.h"
@@ -1485,6 +1487,85 @@ void CXBMCApp::StopVfsService()
   env->DeleteLocalRef(clazz);
 }
 
+bool CXBMCApp::LaunchVRPlayer(const std::string& package,
+                              const std::string& dataURI,
+                              const std::string& flags,
+                              const std::string& filePath,
+                              int positionMs,
+                              const std::string& extras)
+{
+  CJNIIntent intent("android.intent.action.VIEW");
+  if (!intent)
+    return false;
+
+  CJNIURI jniURI = CJNIURI::parse(dataURI);
+  if (!jniURI)
+    return false;
+
+  intent.setDataAndType(jniURI, "video/*");
+  intent.setPackage(package);
+
+  if (!flags.empty())
+  {
+    try
+    {
+      intent.setFlags(std::stoi(flags));
+    }
+    catch (const std::exception&) {}
+  }
+
+  // Parse JSON extras (same format as StartActivity)
+  if (!extras.empty())
+  {
+    rapidjson::Document doc;
+    doc.Parse(extras.c_str());
+    if (doc.IsArray())
+    {
+      for (auto& e : doc.GetArray())
+      {
+        if (e.IsObject() && e.HasMember("type") && e.HasMember("key") && e.HasMember("value") &&
+            e["type"] == "string")
+          intent.putExtra(e["key"].GetString(), e["value"].GetString());
+      }
+    }
+  }
+
+  JNIEnv* env = xbmc_jnienv();
+
+  // Pass start position as int extra (milliseconds) — honored by MX Player, VLC, etc.
+  if (positionMs > 0)
+  {
+    jclass intentClass = env->GetObjectClass(intent.get_raw());
+    jmethodID putIntExtra = env->GetMethodID(
+        intentClass, "putExtra", "(Ljava/lang/String;I)Landroid/content/Intent;");
+    if (putIntExtra)
+    {
+      jstring key = env->NewStringUTF("position");
+      env->CallObjectMethod(intent.get_raw(), putIntExtra, key, static_cast<jint>(positionMs));
+      env->DeleteLocalRef(key);
+    }
+    env->DeleteLocalRef(intentClass);
+
+    CLog::Log(LOGINFO, "LaunchVRPlayer: start position {}ms for {}", positionMs,
+              CURL::GetRedacted(filePath));
+  }
+
+  // Store the original file path so onActivityResult can save the resume bookmark
+  m_vrPlayerFilePath = filePath;
+
+  startActivityForResult(intent, VR_PLAYER_REQUEST_CODE);
+
+  if (env->ExceptionCheck())
+  {
+    env->ExceptionClear();
+    CLog::Log(LOGERROR, "LaunchVRPlayer: failed to launch {}", package);
+    m_vrPlayerFilePath.clear();
+    return false;
+  }
+
+  return true;
+}
+
 // Note intent, dataType, dataURI, action, category, flags, extras, className all default to ""
 bool CXBMCApp::StartActivity(const std::string& package,
                              const std::string& intent,
@@ -2022,6 +2103,87 @@ void CXBMCApp::onNewIntent(CJNIIntent intent)
 
 void CXBMCApp::onActivityResult(int requestCode, int resultCode, CJNIIntent resultData)
 {
+  if (requestCode != VR_PLAYER_REQUEST_CODE || m_vrPlayerFilePath.empty())
+    return;
+
+  std::string filePath = m_vrPlayerFilePath;
+  m_vrPlayerFilePath.clear();
+
+  CLog::Log(LOGINFO, "onActivityResult: requestCode={} resultCode={} hasData={} file={}",
+            requestCode, resultCode, static_cast<bool>(resultData),
+            CURL::GetRedacted(filePath));
+
+  // Dump all extras from the result intent for diagnostics
+  if (resultData)
+  {
+    JNIEnv* env = xbmc_jnienv();
+    jclass intentClass = env->GetObjectClass(resultData.get_raw());
+    jmethodID getExtras = env->GetMethodID(intentClass, "getExtras", "()Landroid/os/Bundle;");
+    jobject bundle = getExtras ? env->CallObjectMethod(resultData.get_raw(), getExtras) : nullptr;
+    if (bundle)
+    {
+      jclass bundleClass = env->GetObjectClass(bundle);
+
+      // Force unparcelling by calling keySet(), then toString() shows actual keys
+      jmethodID keySet = env->GetMethodID(bundleClass, "keySet", "()Ljava/util/Set;");
+      if (keySet)
+      {
+        jobject keys = env->CallObjectMethod(bundle, keySet);
+        if (keys)
+          env->DeleteLocalRef(keys);
+      }
+
+      jmethodID toString = env->GetMethodID(bundleClass, "toString", "()Ljava/lang/String;");
+      auto jStr = static_cast<jstring>(env->CallObjectMethod(bundle, toString));
+      if (jStr)
+      {
+        const char* chars = env->GetStringUTFChars(jStr, nullptr);
+        CLog::Log(LOGINFO, "onActivityResult: extras={}", chars);
+        env->ReleaseStringUTFChars(jStr, chars);
+        env->DeleteLocalRef(jStr);
+      }
+      env->DeleteLocalRef(bundleClass);
+      env->DeleteLocalRef(bundle);
+    }
+    else
+    {
+      CLog::Log(LOGINFO, "onActivityResult: no extras bundle");
+    }
+    env->DeleteLocalRef(intentClass);
+  }
+
+  int positionMs = 0;
+  int durationMs = 0;
+
+  if (resultData)
+  {
+    positionMs = resultData.getIntExtra("position", 0);
+    durationMs = resultData.getIntExtra("duration", 0);
+
+    // VLC uses "extra_position" — fall back if "position" was 0
+    if (positionMs <= 0)
+      positionMs = resultData.getIntExtra("extra_position", 0);
+  }
+
+  CLog::Log(LOGINFO, "onActivityResult: parsed position={}ms duration={}ms",
+            positionMs, durationMs);
+
+  if (positionMs > 0)
+  {
+    CVideoDatabase db;
+    if (db.Open())
+    {
+      CBookmark bookmark;
+      bookmark.timeInSeconds = positionMs / 1000.0;
+      bookmark.totalTimeInSeconds = (durationMs > 0) ? durationMs / 1000.0 : 0;
+      bookmark.player = "external";
+      db.AddBookMarkToFile(filePath, bookmark, CBookmark::RESUME);
+      db.Close();
+
+      CLog::Log(LOGINFO, "onActivityResult: saved resume bookmark at {:.1f}s for {}",
+                bookmark.timeInSeconds, CURL::GetRedacted(filePath));
+    }
+  }
 }
 
 void CXBMCApp::onVisibleBehindCanceled()
