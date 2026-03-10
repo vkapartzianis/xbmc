@@ -116,6 +116,10 @@ public:
       "videoplayer.stereoscopicplaybackmode";
   static constexpr auto SETTING_VIDEOPLAYER_QUITSTEREOMODEONSTOP =
       "videoplayer.quitstereomodeonstop";
+  static constexpr auto SETTING_VIDEOPLAYER_3DEXTERNALPLAYER =
+      "videoplayer.3dexternalplayer";
+  static constexpr auto SETTING_VIDEOPLAYER_3DEXTERNALPLAYERVFS =
+      "videoplayer.3dexternalplayervfs";
   static constexpr auto SETTING_VIDEOPLAYER_RENDERMETHOD = "videoplayer.rendermethod";
   static constexpr auto SETTING_VIDEOPLAYER_HQSCALERS = "videoplayer.hqscalers";
   static constexpr auto SETTING_VIDEOPLAYER_USESUPERRESOLUTION = "videoplayer.usesuperresolution";

@@ -31,6 +31,12 @@
 #include "video/guilib/VideoSelectActionProcessor.h"
 #include "video/guilib/VideoVersionHelper.h"
 
+#if defined(TARGET_ANDROID)
+#include "URL.h"
+#include "platform/android/activity/XBMCApp.h"
+#include "utils/log.h"
+#endif
+
 #include <utility>
 
 namespace CONTEXTMENU
@@ -600,5 +606,68 @@ bool CVideoPlayAndQueue::Execute(const std::shared_ptr<CFileItem>& item) const
 
   return true; //! @todo implement
 };
+
+bool CVideoPlayWithVRPlayer::IsVisible(const CFileItem& item) const
+{
+#if defined(TARGET_ANDROID)
+  if (item.m_bIsFolder || !item.IsVideo())
+    return false;
+
+  const auto settings = CServiceBroker::GetSettingsComponent()->GetSettings();
+  const std::string vrPlayer =
+      settings->GetString(CSettings::SETTING_VIDEOPLAYER_3DEXTERNALPLAYER);
+  return !vrPlayer.empty();
+#else
+  return false;
+#endif
+}
+
+bool CVideoPlayWithVRPlayer::Execute(const std::shared_ptr<CFileItem>& item) const
+{
+#if defined(TARGET_ANDROID)
+  const auto settings = CServiceBroker::GetSettingsComponent()->GetSettings();
+  const std::string vrPlayer =
+      settings->GetString(CSettings::SETTING_VIDEOPLAYER_3DEXTERNALPLAYER);
+  if (vrPlayer.empty())
+    return false;
+
+  // Resolve the actual file path
+  std::string fileUri;
+  if (item->IsVideoDb() && item->HasVideoInfoTag())
+    fileUri = item->GetVideoInfoTag()->m_strFileNameAndPath;
+  else
+    fileUri = item->GetDynPath();
+
+  if (fileUri.empty())
+    fileUri = item->GetPath();
+
+  const bool useVfs =
+      settings->GetBool(CSettings::SETTING_VIDEOPLAYER_3DEXTERNALPLAYERVFS);
+
+  auto resolved = VIDEO_UTILS::ResolveForExternalPlayer(fileUri, useVfs);
+  fileUri = resolved.uri;
+  std::string flags = resolved.flags;
+
+  CLog::Log(LOGINFO, "CVideoPlayWithVRPlayer: Launching '{}' with uri: {}",
+            vrPlayer, CURL::GetRedacted(fileUri));
+
+  if (useVfs)
+    CXBMCApp::Get().StartVfsService();
+
+  bool launched = CXBMCApp::StartActivity(
+      vrPlayer, "android.intent.action.VIEW", "video/*", fileUri, flags);
+
+  if (!launched)
+  {
+    CLog::Log(LOGWARNING, "CVideoPlayWithVRPlayer: Failed to launch '{}'", vrPlayer);
+    if (useVfs)
+      CXBMCApp::Get().StopVfsService();
+  }
+
+  return launched;
+#else
+  return false;
+#endif
+}
 
 }

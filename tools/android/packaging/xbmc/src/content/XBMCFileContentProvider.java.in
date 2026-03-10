@@ -37,7 +37,6 @@ public class XBMCFileContentProvider extends XBMCContentProvider
             .fragment(surl);
 
     Uri out = builder.build();
-    // Log.d(TAG, "GetImageUri: in:" + surl + " out:" + out.toString());
     return out;
   }
 
@@ -114,30 +113,27 @@ public class XBMCFileContentProvider extends XBMCContentProvider
   public ParcelFileDescriptor openFile(Uri uri, String mode)
           throws FileNotFoundException
   {
-    // Log.d(TAG, "openFile: " + uri.toString());
+    String decodedUrl = uri.getFragment();
+    if (decodedUrl == null)
+      throw new FileNotFoundException("No URL in fragment for: " + uri.toString());
 
-    ParcelFileDescriptor[] pipe = null;
+    return openPipeFile(decodedUrl, uri);
+  }
 
+  private ParcelFileDescriptor openPipeFile(String path, Uri uri) throws FileNotFoundException
+  {
     try
     {
-      String decodedUrl = uri.getFragment();
-      // Log.d(TAG, "  decodedUrl: " + decodedUrl);
-      if (decodedUrl == null)
-        return null;
-
-      pipe = ParcelFileDescriptor.createPipe();
-
-      new XBMCFileContentProvider.TransferThread(decodedUrl,
+      ParcelFileDescriptor[] pipe = ParcelFileDescriptor.createPipe();
+      new TransferThread(path,
               new ParcelFileDescriptor.AutoCloseOutputStream(pipe[1])).start();
+      return pipe[0];
     }
     catch (IOException e)
     {
       Log.e(TAG, "XBMCFileContentProvider: Exception opening pipe", e);
-      throw new FileNotFoundException("Could not open pipe for: "
-              + uri.toString());
+      throw new FileNotFoundException("Could not open pipe for: " + uri.toString());
     }
-
-    return (pipe[0]);
   }
 
 

@@ -167,6 +167,11 @@ public:
                             const std::string& category = std::string(),
                             const std::string& className = std::string());
   std::vector<androidPackage> GetApplications() const;
+  std::vector<androidPackage> GetVideoPlayerApplications() const;
+  std::string GetFileProviderUri(const std::string& filePath) const;
+
+  void StartVfsService();
+  void StopVfsService();
 
   /*!
    * \brief If external storage is available, it returns the path for the external storage (for the specified type)

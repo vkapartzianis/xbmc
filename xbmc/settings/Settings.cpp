@@ -457,6 +457,11 @@ void CSettings::InitializeOptionFillers()
   GetSettingsManager()->RegisterSettingOptionsFiller("timezonecountries", CPosixTimezone::SettingOptionsTimezoneCountriesFiller);
   GetSettingsManager()->RegisterSettingOptionsFiller("timezones", CPosixTimezone::SettingOptionsTimezonesFiller);
 #endif
+#if defined(TARGET_ANDROID)
+  GetSettingsManager()->RegisterSettingOptionsFiller(
+      "3dexternalplayers",
+      CStereoscopicsManager::SettingOptions3DExternalPlayersFiller);
+#endif
   GetSettingsManager()->RegisterSettingOptionsFiller(
       "keyboardlayouts", KEYBOARD::CKeyboardLayoutManager::SettingOptionsKeyboardLayoutsFiller);
   GetSettingsManager()->RegisterSettingOptionsFiller(

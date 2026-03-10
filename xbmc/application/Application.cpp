@@ -144,6 +144,7 @@
 #include "video/Bookmark.h"
 #include "video/PlayerController.h"
 #include "video/VideoLibraryQueue.h"
+#include "video/VideoUtils.h"
 #include "video/dialogs/GUIDialogVideoBookmarks.h"
 #ifdef TARGET_WINDOWS
 #include "win32util.h"
@@ -2541,6 +2542,76 @@ bool CApplication::PlayFile(CFileItem item, const std::string& player, bool bRes
 
       dbs.Close();
     }
+
+#if defined(TARGET_ANDROID)
+    // If the user has chosen an external VR player for stereoscopic 3D content,
+    // detect stereo mode and launch the external app instead of playing internally.
+    if (item.IsVideo())
+    {
+      const std::string externalPlayer =
+          CServiceBroker::GetSettingsComponent()->GetSettings()->GetString(
+              CSettings::SETTING_VIDEOPLAYER_3DEXTERNALPLAYER);
+      if (!externalPlayer.empty())
+      {
+        // Detect stereo mode: first from DB stream details, then from filename regex
+        std::string stereoMode;
+        if (item.HasVideoInfoTag() && item.GetVideoInfoTag()->HasStreamDetails())
+          stereoMode = item.GetVideoInfoTag()->m_streamDetails.GetStereoMode();
+
+        if (stereoMode.empty())
+        {
+          const auto& stereoscopicsManager =
+              CServiceBroker::GetGUI()->GetStereoscopicsManager();
+          stereoMode = stereoscopicsManager.DetectStereoModeByString(item.GetPath());
+        }
+
+        if (!stereoMode.empty() && stereoMode != "mono")
+        {
+          // Build intent extras with stereo mode info
+          std::string extras = StringUtils::Format(
+              R"([{{"type":"string","key":"stereo_mode","value":"{}"}}])", stereoMode);
+
+          std::string fileUri = item.GetDynPath();
+          if (fileUri.empty())
+            fileUri = item.GetPath();
+
+          const bool useVfs =
+              CServiceBroker::GetSettingsComponent()->GetSettings()->GetBool(
+                  CSettings::SETTING_VIDEOPLAYER_3DEXTERNALPLAYERVFS);
+
+          auto resolved = VIDEO_UTILS::ResolveForExternalPlayer(fileUri, useVfs);
+          fileUri = resolved.uri;
+          std::string flags = resolved.flags;
+
+          CLog::Log(LOGINFO,
+                    "CApplication::PlayFile: Launching external 3D player '{}' for "
+                    "stereoscopic content (mode: {}, uri: {})",
+                    externalPlayer, stereoMode, CURL::GetRedacted(fileUri));
+
+          // Pass action as 'intent' param to create a fresh ACTION_VIEW intent
+          // (not via getLaunchIntentForPackage which locks the component to the
+          // main activity). setPackage() in StartActivity targets the chosen app.
+          if (useVfs)
+            CXBMCApp::Get().StartVfsService();
+
+          bool launched = CXBMCApp::StartActivity(
+              externalPlayer, "android.intent.action.VIEW", "video/*", fileUri,
+              flags, extras);
+
+          if (launched)
+            return true;
+
+          if (useVfs)
+            CXBMCApp::Get().StopVfsService();
+
+          CLog::Log(LOGWARNING,
+                    "CApplication::PlayFile: Failed to launch external 3D player '{}', "
+                    "falling back to internal playback",
+                    externalPlayer);
+        }
+      }
+    }
+#endif
   }
 
   // a disc image might be Blu-Ray disc

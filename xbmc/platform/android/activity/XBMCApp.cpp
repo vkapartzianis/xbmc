@@ -62,6 +62,7 @@
 #include <dlfcn.h>
 #include <memory>
 #include <mutex>
+#include <set>
 #include <sstream>
 #include <stdlib.h>
 #include <string.h>
@@ -491,6 +492,10 @@ void CXBMCApp::onGainFocus()
   auto& components = CServiceBroker::GetAppComponents();
   const auto appPower = components.GetComponent<CApplicationPowerHandling>();
   appPower->WakeUpScreenSaverAndDPMS();
+
+  // Stop the foreground service when we regain focus (user returned from
+  // the external VR player).  Safe to call even if the service isn't running.
+  StopVfsService();
 }
 
 void CXBMCApp::onLostFocus()
@@ -1137,6 +1142,349 @@ std::vector<androidPackage> CXBMCApp::GetApplications() const
   return m_applications;
 }
 
+std::vector<androidPackage> CXBMCApp::GetVideoPlayerApplications() const
+{
+  std::vector<androidPackage> videoApps;
+
+  JNIEnv* env = xbmc_jnienv();
+  if (!env)
+    return videoApps;
+
+  // Build the set of package names that can handle ACTION_VIEW video/* via raw JNI.
+  // Query with both file:// and content:// schemes to catch apps that only register
+  // for one scheme (e.g., some VR players only handle content:// URIs).
+  std::set<std::string> videoPackages;
+  {
+    // Query with content:// scheme (most apps support this)
+    CJNIIntent viewIntent("android.intent.action.VIEW");
+    CJNIURI dummyUri = CJNIURI::parse("content://dummy/video.mp4");
+    viewIntent.setDataAndType(dummyUri, "video/*");
+
+    CJNIPackageManager pm = GetPackageManager();
+    jobject pmObj = pm.get_raw();
+    if (!pmObj)
+    {
+      CLog::Log(LOGERROR, "GetVideoPlayerApplications: PackageManager is null");
+      return videoApps;
+    }
+
+    jclass pmClass = env->GetObjectClass(pmObj);
+    jmethodID queryMethod = env->GetMethodID(pmClass, "queryIntentActivities",
+        "(Landroid/content/Intent;I)Ljava/util/List;");
+
+    if (env->ExceptionCheck())
+      env->ExceptionClear();
+
+    if (queryMethod)
+    {
+      jobject viewIntentRaw = viewIntent.get_raw();
+      jobject resultList = env->CallObjectMethod(pmObj, queryMethod, viewIntentRaw, (jint)0);
+
+      if (env->ExceptionCheck())
+      {
+        CLog::Log(LOGWARNING, "GetVideoPlayerApplications: queryIntentActivities threw exception");
+        env->ExceptionDescribe();
+        env->ExceptionClear();
+      }
+      else if (resultList)
+      {
+        jclass listClass = env->FindClass("java/util/List");
+        jmethodID sizeMethod = env->GetMethodID(listClass, "size", "()I");
+        jmethodID getMethod = env->GetMethodID(listClass, "get", "(I)Ljava/lang/Object;");
+        int count = env->CallIntMethod(resultList, sizeMethod);
+
+        jclass resolveInfoClass = env->FindClass("android/content/pm/ResolveInfo");
+        jfieldID activityInfoField = env->GetFieldID(resolveInfoClass, "activityInfo",
+            "Landroid/content/pm/ActivityInfo;");
+        jclass packageItemInfoClass = env->FindClass("android/content/pm/PackageItemInfo");
+        jfieldID packageNameField = env->GetFieldID(packageItemInfoClass, "packageName",
+            "Ljava/lang/String;");
+
+        for (int i = 0; i < count; i++)
+        {
+          jobject resolveInfo = env->CallObjectMethod(resultList, getMethod, (jint)i);
+          if (!resolveInfo)
+            continue;
+
+          jobject activityInfo = env->GetObjectField(resolveInfo, activityInfoField);
+          if (activityInfo)
+          {
+            auto jPkgName = (jstring)env->GetObjectField(activityInfo, packageNameField);
+            if (jPkgName)
+            {
+              const char* pkgChars = env->GetStringUTFChars(jPkgName, nullptr);
+              videoPackages.insert(pkgChars);
+              env->ReleaseStringUTFChars(jPkgName, pkgChars);
+              env->DeleteLocalRef(jPkgName);
+            }
+            env->DeleteLocalRef(activityInfo);
+          }
+          env->DeleteLocalRef(resolveInfo);
+        }
+
+        env->DeleteLocalRef(resultList);
+        env->DeleteLocalRef(listClass);
+        env->DeleteLocalRef(resolveInfoClass);
+        env->DeleteLocalRef(packageItemInfoClass);
+      }
+
+      // Second pass: also query with file:// scheme to catch apps that only
+      // register for file URIs (some VR players)
+      CJNIIntent fileIntent("android.intent.action.VIEW");
+      CJNIURI fileUri = CJNIURI::parse("file:///dummy.mp4");
+      fileIntent.setDataAndType(fileUri, "video/*");
+
+      jobject fileIntentRaw = fileIntent.get_raw();
+      jobject fileResultList = env->CallObjectMethod(pmObj, queryMethod, fileIntentRaw, (jint)0);
+      if (env->ExceptionCheck())
+        env->ExceptionClear();
+      else if (fileResultList)
+      {
+        jclass listClass2 = env->FindClass("java/util/List");
+        jmethodID sizeMethod2 = env->GetMethodID(listClass2, "size", "()I");
+        jmethodID getMethod2 = env->GetMethodID(listClass2, "get", "(I)Ljava/lang/Object;");
+        int count2 = env->CallIntMethod(fileResultList, sizeMethod2);
+
+        jclass resolveInfoClass2 = env->FindClass("android/content/pm/ResolveInfo");
+        jfieldID activityInfoField2 = env->GetFieldID(resolveInfoClass2, "activityInfo",
+            "Landroid/content/pm/ActivityInfo;");
+        jclass packageItemInfoClass2 = env->FindClass("android/content/pm/PackageItemInfo");
+        jfieldID packageNameField2 = env->GetFieldID(packageItemInfoClass2, "packageName",
+            "Ljava/lang/String;");
+
+        for (int i = 0; i < count2; i++)
+        {
+          jobject ri = env->CallObjectMethod(fileResultList, getMethod2, (jint)i);
+          if (!ri) continue;
+          jobject ai = env->GetObjectField(ri, activityInfoField2);
+          if (ai)
+          {
+            auto jpn = (jstring)env->GetObjectField(ai, packageNameField2);
+            if (jpn)
+            {
+              const char* c = env->GetStringUTFChars(jpn, nullptr);
+              videoPackages.insert(c);
+              env->ReleaseStringUTFChars(jpn, c);
+              env->DeleteLocalRef(jpn);
+            }
+            env->DeleteLocalRef(ai);
+          }
+          env->DeleteLocalRef(ri);
+        }
+        env->DeleteLocalRef(fileResultList);
+        env->DeleteLocalRef(listClass2);
+        env->DeleteLocalRef(resolveInfoClass2);
+        env->DeleteLocalRef(packageItemInfoClass2);
+      }
+    }
+    else
+    {
+      CLog::Log(LOGWARNING, "GetVideoPlayerApplications: queryIntentActivities not found, "
+                             "falling back to all apps");
+    }
+
+    env->DeleteLocalRef(pmClass);
+  }
+
+  // Now filter the cached app list (which already has labels) by video-capable packages
+  std::string ownPackage = getPackageName();
+  auto allApps = GetApplications();
+
+  if (videoPackages.empty())
+  {
+    // Fallback: if queryIntentActivities failed, return all apps except Kodi
+    CLog::Log(LOGWARNING, "GetVideoPlayerApplications: no video packages found, returning all apps");
+    for (const auto& app : allApps)
+    {
+      if (app.packageName != ownPackage)
+        videoApps.emplace_back(app);
+    }
+  }
+  else
+  {
+    for (const auto& app : allApps)
+    {
+      if (app.packageName != ownPackage &&
+          videoPackages.find(app.packageName) != videoPackages.end())
+        videoApps.emplace_back(app);
+    }
+  }
+
+  CLog::Log(LOGINFO, "GetVideoPlayerApplications: found {} video player apps (from {} total, {} video-capable)",
+            videoApps.size(), allApps.size(), videoPackages.size());
+  return videoApps;
+}
+
+std::string CXBMCApp::GetFileProviderUri(const std::string& filePath) const
+{
+  JNIEnv* env = xbmc_jnienv();
+  if (!env)
+    return "";
+
+  // Create java.io.File from path
+  jclass fileClass = env->FindClass("java/io/File");
+  jmethodID fileInit = env->GetMethodID(fileClass, "<init>", "(Ljava/lang/String;)V");
+  jstring jPath = env->NewStringUTF(filePath.c_str());
+  jobject jFile = env->NewObject(fileClass, fileInit, jPath);
+
+  // Get authority string
+  std::string authority = getPackageName() + ".fileprovider";
+  jstring jAuthority = env->NewStringUTF(authority.c_str());
+
+  // Use the app's ClassLoader to find FileProvider (FindClass can't find
+  // AndroidX classes from native threads — they're not on the boot classpath)
+  jobject contextRaw = CJNIContext::get_raw();
+  jclass contextClass = env->GetObjectClass(contextRaw);
+  jmethodID getClassLoader = env->GetMethodID(contextClass, "getClassLoader",
+      "()Ljava/lang/ClassLoader;");
+  jobject classLoader = env->CallObjectMethod(contextRaw, getClassLoader);
+  env->DeleteLocalRef(contextClass);
+
+  jclass classLoaderClass = env->GetObjectClass(classLoader);
+  jmethodID loadClass = env->GetMethodID(classLoaderClass, "loadClass",
+      "(Ljava/lang/String;)Ljava/lang/Class;");
+  env->DeleteLocalRef(classLoaderClass);
+
+  jstring fpClassName = env->NewStringUTF("androidx.core.content.FileProvider");
+  auto fpClass = (jclass)env->CallObjectMethod(classLoader, loadClass, fpClassName);
+  env->DeleteLocalRef(fpClassName);
+  env->DeleteLocalRef(classLoader);
+
+  if (!fpClass || env->ExceptionCheck())
+  {
+    CLog::Log(LOGWARNING, "GetFileProviderUri: FileProvider class not found via ClassLoader");
+    env->ExceptionClear();
+    env->DeleteLocalRef(jPath);
+    env->DeleteLocalRef(jFile);
+    env->DeleteLocalRef(fileClass);
+    return "";
+  }
+
+  jmethodID getUriMethod = env->GetStaticMethodID(fpClass, "getUriForFile",
+      "(Landroid/content/Context;Ljava/lang/String;Ljava/io/File;)Landroid/net/Uri;");
+  if (!getUriMethod || env->ExceptionCheck())
+  {
+    CLog::Log(LOGWARNING, "GetFileProviderUri: getUriForFile method not found");
+    env->ExceptionClear();
+    env->DeleteLocalRef(jPath);
+    env->DeleteLocalRef(jFile);
+    env->DeleteLocalRef(jAuthority);
+    env->DeleteLocalRef(fpClass);
+    env->DeleteLocalRef(fileClass);
+    return "";
+  }
+
+  // contextRaw already obtained above for ClassLoader
+  jobject contentUri = env->CallStaticObjectMethod(fpClass, getUriMethod,
+      contextRaw, jAuthority, jFile);
+
+  if (env->ExceptionCheck())
+  {
+    CLog::Log(LOGWARNING, "GetFileProviderUri: getUriForFile threw exception for '{}'", filePath);
+    env->ExceptionDescribe();
+    env->ExceptionClear();
+    env->DeleteLocalRef(jPath);
+    env->DeleteLocalRef(jFile);
+    env->DeleteLocalRef(jAuthority);
+    env->DeleteLocalRef(fpClass);
+    env->DeleteLocalRef(fileClass);
+    return "";
+  }
+
+  if (!contentUri)
+  {
+    env->DeleteLocalRef(jPath);
+    env->DeleteLocalRef(jFile);
+    env->DeleteLocalRef(jAuthority);
+    env->DeleteLocalRef(fpClass);
+    env->DeleteLocalRef(fileClass);
+    return "";
+  }
+
+  // Convert Uri to string
+  jmethodID toStringMethod = env->GetMethodID(env->GetObjectClass(contentUri),
+      "toString", "()Ljava/lang/String;");
+  auto jUriStr = (jstring)env->CallObjectMethod(contentUri, toStringMethod);
+  const char* uriChars = env->GetStringUTFChars(jUriStr, nullptr);
+  std::string result(uriChars);
+  env->ReleaseStringUTFChars(jUriStr, uriChars);
+
+  CLog::Log(LOGINFO, "GetFileProviderUri: '{}' -> '{}'", filePath, result);
+
+  env->DeleteLocalRef(jUriStr);
+  env->DeleteLocalRef(contentUri);
+  env->DeleteLocalRef(jPath);
+  env->DeleteLocalRef(jFile);
+  env->DeleteLocalRef(jAuthority);
+  env->DeleteLocalRef(fpClass);
+  env->DeleteLocalRef(fileClass);
+
+  return result;
+}
+
+void CXBMCApp::StartVfsService()
+{
+  JNIEnv* env = xbmc_jnienv();
+  std::string className =
+      std::string(CCompileInfo::GetClass()) + "/XBMCVfsService";
+  jclass clazz = env->FindClass(className.c_str());
+  if (!clazz)
+  {
+    CLog::Log(LOGERROR, "StartVfsService: class {} not found", className);
+    env->ExceptionClear();
+    return;
+  }
+  jmethodID startMethod =
+      env->GetStaticMethodID(clazz, "start", "(Landroid/content/Context;)V");
+  if (!startMethod)
+  {
+    CLog::Log(LOGERROR, "StartVfsService: start() method not found");
+    env->ExceptionClear();
+    env->DeleteLocalRef(clazz);
+    return;
+  }
+  jobject ctx = CJNIContext::get_raw().get();
+  env->CallStaticVoidMethod(clazz, startMethod, ctx);
+  if (env->ExceptionCheck())
+  {
+    CLog::Log(LOGERROR, "StartVfsService: exception calling start()");
+    env->ExceptionClear();
+  }
+  else
+  {
+    CLog::Log(LOGINFO, "StartVfsService: foreground service started");
+  }
+  env->DeleteLocalRef(clazz);
+}
+
+void CXBMCApp::StopVfsService()
+{
+  JNIEnv* env = xbmc_jnienv();
+  std::string className =
+      std::string(CCompileInfo::GetClass()) + "/XBMCVfsService";
+  jclass clazz = env->FindClass(className.c_str());
+  if (!clazz)
+  {
+    env->ExceptionClear();
+    return;
+  }
+  jmethodID stopMethod =
+      env->GetStaticMethodID(clazz, "stop", "(Landroid/content/Context;)V");
+  if (!stopMethod)
+  {
+    env->ExceptionClear();
+    env->DeleteLocalRef(clazz);
+    return;
+  }
+  jobject ctx = CJNIContext::get_raw().get();
+  env->CallStaticVoidMethod(clazz, stopMethod, ctx);
+  if (env->ExceptionCheck())
+    env->ExceptionClear();
+  else
+    CLog::Log(LOGINFO, "StopVfsService: foreground service stopped");
+  env->DeleteLocalRef(clazz);
+}
+
 // Note intent, dataType, dataURI, action, category, flags, extras, className all default to ""
 bool CXBMCApp::StartActivity(const std::string& package,
                              const std::string& intent,
@@ -1234,11 +1582,43 @@ bool CXBMCApp::StartActivity(const std::string& package,
     newIntent.setClassName(package, className);
 
   startActivity(newIntent);
-  if (xbmc_jnienv()->ExceptionCheck())
+  JNIEnv* env = xbmc_jnienv();
+  if (env->ExceptionCheck())
   {
-    CLog::LogF(LOGERROR, "ExceptionOccurred launching {}", package);
-    xbmc_jnienv()->ExceptionDescribe();
-    xbmc_jnienv()->ExceptionClear();
+    // Capture the exception message for the Kodi log (ExceptionDescribe only goes to stderr)
+    jthrowable exc = env->ExceptionOccurred();
+    env->ExceptionClear();
+    std::string excMsg = "unknown";
+    if (exc)
+    {
+      jclass throwableClass = env->FindClass("java/lang/Throwable");
+      jmethodID getMsg = env->GetMethodID(throwableClass, "getMessage", "()Ljava/lang/String;");
+      auto jMsg = (jstring)env->CallObjectMethod(exc, getMsg);
+      if (jMsg)
+      {
+        const char* chars = env->GetStringUTFChars(jMsg, nullptr);
+        excMsg = chars;
+        env->ReleaseStringUTFChars(jMsg, chars);
+        env->DeleteLocalRef(jMsg);
+      }
+      // Also get class name for context
+      jclass classClass = env->FindClass("java/lang/Class");
+      jmethodID getName = env->GetMethodID(classClass, "getName", "()Ljava/lang/String;");
+      jclass excClass = env->GetObjectClass(exc);
+      auto jClassName = (jstring)env->CallObjectMethod(excClass, getName);
+      if (jClassName)
+      {
+        const char* chars = env->GetStringUTFChars(jClassName, nullptr);
+        excMsg = std::string(chars) + ": " + excMsg;
+        env->ReleaseStringUTFChars(jClassName, chars);
+        env->DeleteLocalRef(jClassName);
+      }
+      env->DeleteLocalRef(excClass);
+      env->DeleteLocalRef(classClass);
+      env->DeleteLocalRef(throwableClass);
+      env->DeleteLocalRef(exc);
+    }
+    CLog::LogF(LOGERROR, "Exception launching {}: {}", package, excMsg);
     return false;
   }
 

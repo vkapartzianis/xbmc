@@ -106,4 +106,21 @@ std::string GetResumeString(const CFileItem& item);
  */
 ResumeInformation GetStackPartResumeInformation(const CFileItem& item, unsigned int partNumber);
 
+#if defined(TARGET_ANDROID)
+struct ExternalPlayerUri
+{
+  std::string uri;
+  std::string flags;
+};
+
+/*! \brief Resolve a Kodi VFS path into a URI suitable for an external Android player.
+  Handles three cases: VFS proxy (content provider), local file (FileProvider), and
+  network URL (authenticate, convert protocol, resolve redirects).
+  \param fileUri [in] the Kodi VFS path (local path, davs://, http://, etc.)
+  \param useVfs [in] if true, route all sources through Kodi's VFS content provider
+  \return The resolved URI and any intent flags needed.
+  */
+ExternalPlayerUri ResolveForExternalPlayer(const std::string& fileUri, bool useVfs);
+#endif
+
 } // namespace VIDEO_UTILS

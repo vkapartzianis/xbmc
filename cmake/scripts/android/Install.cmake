@@ -30,8 +30,11 @@ unset(major)
 unset(minor)
 unset(patch)
 
-# Quest-specific manifest settings (set KODI_TARGET=quest at cmake configure time)
-if("$ENV{KODI_TARGET}" STREQUAL "quest")
+# Quest-specific manifest settings (set KODI_TARGET=quest once, then it sticks)
+if(NOT "$ENV{KODI_TARGET}" STREQUAL "")
+  set(KODI_TARGET "$ENV{KODI_TARGET}" CACHE STRING "Target device (e.g. quest)" FORCE)
+endif()
+if("${KODI_TARGET}" STREQUAL "quest")
   set(QUEST_VR_FEATURE [[    <uses-feature
         android:name="android.hardware.vr.headtracking"
         android:required="true"
@@ -70,6 +73,7 @@ set(package_files strings.xml
                   src/XBMCVideoSurfaceRenderer.java
                   src/XBMCVideoView.java
                   src/XBMCFile.java
+                  src/XBMCVfsService.java
                   src/XBMCTextureCache.java
                   src/XBMCURIUtils.java
                   src/channels/SyncChannelJobService.java

@@ -8,4 +8,9 @@ set(HEADERS NetworkAndroid.h
             ZeroconfBrowserAndroid.h
       )
 
+if(MICROHTTPD_FOUND)
+  list(APPEND SOURCES VfsProxyServer.cpp)
+  list(APPEND HEADERS VfsProxyServer.h)
+endif()
+
 core_add_library(platform_android_network)

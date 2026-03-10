@@ -40,6 +40,13 @@
 #include "video/VideoInfoTag.h"
 #include "view/GUIViewState.h"
 
+#if defined(TARGET_ANDROID)
+#include "PasswordManager.h"
+#include "filesystem/CurlFile.h"
+#include "platform/android/activity/XBMCApp.h"
+#include "platform/android/network/VfsProxyServer.h"
+#endif
+
 namespace
 {
 class CAsyncGetItemsForPlaylist : public IRunnable
@@ -869,5 +876,124 @@ ResumeInformation GetStackPartResumeInformation(const CFileItem& item, unsigned 
   }
   return resumeInfo;
 }
+
+#if defined(TARGET_ANDROID)
+ExternalPlayerUri ResolveForExternalPlayer(const std::string& fileUri, bool useVfs)
+{
+  ExternalPlayerUri result;
+  result.uri = fileUri;
+
+  // Resolve .strm files: they are tiny text files containing the actual URL.
+  // Read the URL from inside so we hand the real stream to the external player.
+  std::string resolvedUri = fileUri;
+  if (URIUtils::HasExtension(fileUri, ".strm"))
+  {
+    CFileItem strmItem(fileUri, false);
+    const std::unique_ptr<PLAYLIST::CPlayList> playlist(
+        PLAYLIST::CPlayListFactory::Create(strmItem));
+    if (playlist && playlist->Load(fileUri) && playlist->size() > 0)
+    {
+      resolvedUri = (*playlist)[0]->GetDynPath();
+      if (resolvedUri.empty())
+        resolvedUri = (*playlist)[0]->GetPath();
+
+      CLog::Log(LOGINFO, "ResolveForExternalPlayer: Resolved .strm to {}",
+                CURL::GetRedacted(resolvedUri));
+    }
+    else
+    {
+      CLog::Log(LOGWARNING,
+                "ResolveForExternalPlayer: Failed to resolve .strm file, "
+                "using path as-is");
+    }
+    result.uri = resolvedUri;
+  }
+
+  if (useVfs)
+  {
+    // VFS proxy: serve the file through a lightweight localhost-only
+    // HTTP server with Range (seek) support.  No auth, no access
+    // control — anything CFile can open is served.
+    uint16_t port = CVfsProxyServer::GetInstance().Start();
+    if (port > 0)
+    {
+      result.uri = "http://127.0.0.1:" + std::to_string(port)
+          + "/" + CURL::Encode(resolvedUri);
+      CLog::Log(LOGINFO, "ResolveForExternalPlayer: VFS proxy on port {}: {}",
+                port, CURL::GetRedacted(result.uri));
+      return result;
+    }
+    CLog::Log(LOGWARNING,
+              "ResolveForExternalPlayer: VFS proxy server failed to start, "
+              "falling back to direct URL");
+  }
+
+  if (!resolvedUri.empty() && resolvedUri[0] == '/')
+  {
+    // Local file: convert to content:// URI via FileProvider
+    // (file:// URIs are blocked on Android 7+)
+    std::string contentUri = CXBMCApp::Get().GetFileProviderUri(resolvedUri);
+    if (!contentUri.empty())
+    {
+      result.uri = contentUri;
+      result.flags = "1"; // FLAG_GRANT_READ_URI_PERMISSION
+    }
+    else
+    {
+      CLog::Log(LOGWARNING, "ResolveForExternalPlayer: FileProvider URI "
+                "failed, trying file:// URI");
+      result.uri = "file://" + resolvedUri;
+    }
+  }
+  else
+  {
+    // Network URL: look up saved credentials and convert
+    // Kodi-internal schemes to standard ones
+    CURL url(resolvedUri);
+    CPasswordManager::GetInstance().AuthenticateURL(url);
+    std::string proto = url.GetProtocol();
+    if (proto == "davs")
+      url.SetProtocol("https");
+    else if (proto == "dav")
+      url.SetProtocol("http");
+
+    // Build a clean URL string for curl to open
+    std::string authUrl = url.Get();
+    std::string authUrlNoPass = url.GetWithoutUserDetails();
+    CLog::Log(LOGINFO, "ResolveForExternalPlayer: Resolving redirects for {}",
+              CURL::GetRedacted(authUrl));
+
+    // Try to follow HTTP redirects to get a direct CDN URL
+    XFILE::CCurlFile curlFile;
+    CURL freshUrl(authUrl);
+    if (curlFile.Open(freshUrl))
+    {
+      char buf;
+      curlFile.Read(&buf, 1);
+      std::string resolved = curlFile.GetURL();
+      curlFile.Close();
+
+      CLog::Log(LOGINFO, "ResolveForExternalPlayer: Effective URL: {}",
+                CURL::GetRedacted(resolved));
+
+      // GetURL() strips credentials, so compare against the
+      // credential-stripped version to detect actual redirects
+      if (!resolved.empty() && resolved != authUrlNoPass)
+        result.uri = resolved;
+      else
+        result.uri = authUrl;
+    }
+    else
+    {
+      CLog::Log(LOGWARNING,
+                "ResolveForExternalPlayer: Failed to open URL for "
+                "redirect resolution, using original");
+      result.uri = authUrl;
+    }
+  }
+
+  return result;
+}
+#endif
 
 } // namespace VIDEO_UTILS

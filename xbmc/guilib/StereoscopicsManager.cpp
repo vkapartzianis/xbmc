@@ -37,6 +37,12 @@
 #include "utils/Variant.h"
 #include "utils/log.h"
 
+#include "settings/lib/SettingDefinitions.h"
+
+#if defined(TARGET_ANDROID)
+#include "platform/android/activity/XBMCApp.h"
+#endif
+
 #include <stdlib.h>
 
 struct StereoModeMap
@@ -634,3 +640,25 @@ void CStereoscopicsManager::OnPlaybackStopped(void)
 
   m_stereoModeSetByUser = RENDER_STEREO_MODE_UNDEFINED;
 }
+
+#if defined(TARGET_ANDROID)
+void CStereoscopicsManager::SettingOptions3DExternalPlayersFiller(
+    const std::shared_ptr<const CSetting>& setting,
+    std::vector<StringSettingOption>& list,
+    std::string& current,
+    void* data)
+{
+  CLog::Log(LOGINFO, "SettingOptions3DExternalPlayersFiller: called, current='{}'", current);
+
+  // First option: play 3D content internally (empty value = no external player)
+  list.emplace_back(g_localizeStrings.Get(36702), "");
+
+  // Query only apps that can handle ACTION_VIEW for video/* content
+  auto apps = CXBMCApp::Get().GetVideoPlayerApplications();
+  CLog::Log(LOGINFO, "SettingOptions3DExternalPlayersFiller: found {} video player apps", apps.size());
+  for (const auto& app : apps)
+    list.emplace_back(app.packageLabel, app.packageName);
+
+  CLog::Log(LOGINFO, "SettingOptions3DExternalPlayersFiller: total options={}", list.size());
+}
+#endif

@@ -18,11 +18,15 @@
 #include "settings/lib/ISettingCallback.h"
 
 #include <stdlib.h>
+#include <string>
+#include <vector>
 
 class CAction;
 class CDataCacheCore;
 class CGUIWindowManager;
 class CSettings;
+struct StringSettingOption;
+class CSetting;
 
 enum STEREOSCOPIC_PLAYBACK_MODE
 {
@@ -58,6 +62,14 @@ public:
    */
   static CAction ConvertActionCommandToAction(const std::string &command, const std::string &parameter);
   static std::string NormalizeStereoMode(const std::string &mode);
+
+#if defined(TARGET_ANDROID)
+  static void SettingOptions3DExternalPlayersFiller(
+      const std::shared_ptr<const CSetting>& setting,
+      std::vector<StringSettingOption>& list,
+      std::string& current,
+      void* data);
+#endif
 
   void OnSettingChanged(const std::shared_ptr<const CSetting>& setting) override;
   void OnStreamChange();

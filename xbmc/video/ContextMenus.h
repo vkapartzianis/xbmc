@@ -148,4 +148,11 @@ struct CVideoPlayAndQueue : IContextMenuItem
   bool Execute(const std::shared_ptr<CFileItem>& item) const override;
 };
 
+struct CVideoPlayWithVRPlayer : CStaticContextMenuAction
+{
+  CVideoPlayWithVRPlayer() : CStaticContextMenuAction(36703) {} // Open with VR player
+  bool IsVisible(const CFileItem& item) const override;
+  bool Execute(const std::shared_ptr<CFileItem>& item) const override;
+};
+
 }

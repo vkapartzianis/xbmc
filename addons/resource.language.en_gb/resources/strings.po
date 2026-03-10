@@ -21944,7 +21944,42 @@ msgctxt "#36642"
 msgid "No orphaned add-ons to remove."
 msgstr ""
 
-#empty strings from id 36643 to 36898
+#empty strings from id 36643 to 36699
+
+#. Label for setting to select an external app for 3D video playback (Android only)
+#: system/settings/android.xml
+msgctxt "#36700"
+msgid "VR Video Player"
+msgstr ""
+
+#. Help text for the VR Video Player setting
+#: system/settings/android.xml
+msgctxt "#36701"
+msgid "Select an external app to play stereoscopic 3D videos. When a 3D video is detected, it will be sent to this app instead of playing internally."
+msgstr ""
+
+#. Default option for VR Video Player setting (use Kodi's internal player)
+#: system/settings/android.xml
+msgctxt "#36702"
+msgid "Kodi (internal)"
+msgstr ""
+
+#. Context menu item to play a video with the configured external VR player (Android only)
+msgctxt "#36703"
+msgid "Play in VR"
+msgstr ""
+
+#. Label for setting to use Kodi VFS proxy when sending files to the VR Video Player
+msgctxt "#36704"
+msgid "Use VFS proxy for VR Video Player"
+msgstr ""
+
+#. Help text for VFS proxy setting
+msgctxt "#36705"
+msgid "Stream files to the external VR player through Kodi's virtual filesystem. Enable this if the player cannot access your files directly (e.g. SMB/NFS shares). Disable for better seeking with HTTP/WebDAV sources."
+msgstr ""
+
+#empty strings from id 36706 to 36898
 
 #. Description of setting with label #729 "Enable SSL"
 #: system/settings/settings.xml

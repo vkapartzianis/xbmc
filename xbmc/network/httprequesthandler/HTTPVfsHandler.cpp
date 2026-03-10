@@ -28,7 +28,12 @@ CHTTPVfsHandler::CHTTPVfsHandler(const HTTPRequest &request)
   {
     file = m_request.pathUrl.substr(5);
 
-    if (CFileUtils::Exists(file))
+    // Skip CFileUtils::Exists() for remote URLs — some servers
+    // (e.g. Real-Debrid WebDAV) reject HEAD requests.  The actual
+    // open in CHTTPFileHandler::SetFile() catches missing files.
+    bool fileExists = (file.find("://") != std::string::npos) || CFileUtils::Exists(file);
+
+    if (fileExists)
     {
       bool accessible = false;
       if (file.substr(0, 8) == "image://")

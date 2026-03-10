@@ -15,6 +15,7 @@
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="moe.shizuku.manager.permission.API_V23" />
 
 @QUEST_VR_FEATURE@
@@ -128,6 +129,16 @@
         </receiver>
 
         <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="@APP_PACKAGE@.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+        <provider
             android:name=".content.XBMCMediaContentProvider"
             android:authorities="@APP_PACKAGE@.media"
             android:exported="true" />
@@ -160,6 +171,10 @@
                 android:name="android.app.searchable"
                 android:resource="@xml/searchable" />
         </activity>
+
+       <service
+           android:name=".XBMCVfsService"
+           android:exported="false" />
 
        <service
            android:name=".channels.SyncChannelJobService"

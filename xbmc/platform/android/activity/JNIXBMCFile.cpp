@@ -9,6 +9,7 @@
 #include "JNIXBMCFile.h"
 
 #include "CompileInfo.h"
+#include "URL.h"
 #include "utils/FileUtils.h"
 #include "utils/log.h"
 
@@ -47,21 +48,29 @@ void CJNIXBMCFile::RegisterNatives(JNIEnv *env)
 jboolean CJNIXBMCFile::_open(JNIEnv *env, jobject thiz, jstring path)
 {
   std::string strPath = jcast<std::string>(jhstring::fromJNI(path));
+  CLog::Log(LOGINFO, "CJNIXBMCFile::_open: {}", CURL::GetRedacted(strPath));
 
   if (find_instance(thiz))
+  {
+    CLog::Log(LOGWARNING, "CJNIXBMCFile::_open: instance already exists");
     return false;
+  }
 
-  if (!XFILE::CFile::Exists(strPath))
-    return false;
-
+  // Skip CFile::Exists() — some servers (e.g. Real-Debrid WebDAV) reject
+  // HEAD requests.  CFile::Open() below will fail if the path is invalid.
   CJNIXBMCFile* file = new CJNIXBMCFile();
   file->m_file = std::make_unique<XFILE::CFile>();
   bool ret = file->m_file->Open(strPath);
   if (!ret)
   {
+    CLog::Log(LOGERROR, "CJNIXBMCFile::_open: CFile::Open failed for {}",
+              CURL::GetRedacted(strPath));
     delete file;
     return false;
   }
+
+  CLog::Log(LOGINFO, "CJNIXBMCFile::_open: success, length={}",
+            file->m_file->GetLength());
 
   jhobject jo = jhobject::fromJNI(thiz);
   jo.setGlobal();
@@ -75,6 +84,7 @@ void CJNIXBMCFile::_close(JNIEnv *env, jobject thiz)
   CJNIXBMCFile *inst = find_instance(thiz);
   if (inst)
   {
+    CLog::Log(LOGINFO, "CJNIXBMCFile::_close");
     inst->m_file->Close();
     remove_instance(inst);
     delete inst;
@@ -117,7 +127,5 @@ jboolean CJNIXBMCFile::_eof(JNIEnv *env, jobject thiz)
 
   return true;
 }
-
-
 
 

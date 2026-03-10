@@ -241,6 +241,25 @@
           <default>true</default>
           <control type="toggle" />
         </setting>
+        <setting id="videoplayer.3dexternalplayer" type="string" label="36700" help="36701">
+          <requirement>HAS_MEDIACODEC</requirement>
+          <level>1</level>
+          <default></default>
+          <constraints>
+            <allowempty>true</allowempty>
+            <options>3dexternalplayers</options>
+          </constraints>
+          <control type="list" format="string" />
+        </setting>
+        <setting id="videoplayer.3dexternalplayervfs" type="boolean" label="36704" help="36705">
+          <requirement>HAS_MEDIACODEC</requirement>
+          <dependencies>
+            <dependency type="visible" setting="videoplayer.3dexternalplayer" operator="!is"></dependency>
+          </dependencies>
+          <level>1</level>
+          <default>false</default>
+          <control type="toggle" />
+        </setting>
       </group>
       <group id="5" label="14233">
         <setting id="videoplayer.teletextenabled" type="boolean" label="23050" help="36174">
