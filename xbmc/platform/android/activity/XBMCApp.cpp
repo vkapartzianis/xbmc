@@ -1288,6 +1288,15 @@ std::vector<androidPackage> CXBMCApp::GetVideoPlayerApplications() const
     env->DeleteLocalRef(pmClass);
   }
 
+  // Add known VR/media players that don't declare ACTION_VIEW intent filters
+  // but can still play videos when launched with the right intent
+  static const std::vector<std::string> knownVRPlayers = {
+      "xyz.skybox.player",      // SKYBOX VR Video Player (Android)
+      "xyz.skybox.player.ovr",  // SKYBOX VR Video Player (Quest Store)
+  };
+  for (const auto& pkg : knownVRPlayers)
+    videoPackages.insert(pkg);
+
   // Now filter the cached app list (which already has labels) by video-capable packages
   std::string ownPackage = getPackageName();
   auto allApps = GetApplications();
@@ -1310,6 +1319,161 @@ std::vector<androidPackage> CXBMCApp::GetVideoPlayerApplications() const
           videoPackages.find(app.packageName) != videoPackages.end())
         videoApps.emplace_back(app);
     }
+  }
+
+  // Add known VR players that may be installed but lack a launcher intent
+  // (and thus weren't returned by GetApplications)
+  {
+    CJNIPackageManager pm = GetPackageManager();
+    jobject pmObj = pm.get_raw();
+    jclass pmClass = env->GetObjectClass(pmObj);
+    jmethodID getAppInfo = env->GetMethodID(pmClass, "getApplicationInfo",
+        "(Ljava/lang/String;I)Landroid/content/pm/ApplicationInfo;");
+
+    for (const auto& pkg : knownVRPlayers)
+    {
+      if (pkg == ownPackage)
+        continue;
+
+      bool found = false;
+      for (const auto& app : videoApps)
+      {
+        if (app.packageName == pkg)
+        {
+          found = true;
+          break;
+        }
+      }
+      if (found)
+        continue;
+
+      // Check if the package is actually installed via raw JNI
+      jstring jPkg = env->NewStringUTF(pkg.c_str());
+      jobject appInfoObj = env->CallObjectMethod(pmObj, getAppInfo, jPkg, (jint)0);
+      env->DeleteLocalRef(jPkg);
+
+      if (env->ExceptionCheck() || !appInfoObj)
+      {
+        env->ExceptionClear();
+        continue;
+      }
+
+      CJNIApplicationInfo appInfo(jhobject::fromJNI(appInfoObj));
+      androidPackage newPkg;
+      newPkg.packageName = pkg;
+      newPkg.packageLabel = pm.getApplicationLabel(appInfo).toString();
+      newPkg.icon = appInfo.icon;
+      videoApps.emplace_back(newPkg);
+      CLog::Log(LOGINFO, "GetVideoPlayerApplications: added known VR player '{}'", pkg);
+
+      // Log activities for this package to help discover correct class names
+      // (also done below for all video players, not just known VR ones)
+      jstring jPkg2 = env->NewStringUTF(pkg.c_str());
+      jmethodID getPkgInfo = env->GetMethodID(pmClass, "getPackageInfo",
+          "(Ljava/lang/String;I)Landroid/content/pm/PackageInfo;");
+      if (getPkgInfo)
+      {
+        // GET_ACTIVITIES = 1
+        jobject pkgInfo = env->CallObjectMethod(pmObj, getPkgInfo, jPkg2, (jint)1);
+        if (!env->ExceptionCheck() && pkgInfo)
+        {
+          jclass pkgInfoClass = env->GetObjectClass(pkgInfo);
+          jfieldID activitiesField = env->GetFieldID(pkgInfoClass, "activities",
+              "[Landroid/content/pm/ActivityInfo;");
+          auto activities = (jobjectArray)env->GetObjectField(pkgInfo, activitiesField);
+          if (activities)
+          {
+            int actCount = env->GetArrayLength(activities);
+            CLog::Log(LOGINFO, "GetVideoPlayerApplications: '{}' has {} activities:", pkg, actCount);
+            jclass actInfoClass = env->FindClass("android/content/pm/ActivityInfo");
+            jfieldID nameField = env->GetFieldID(actInfoClass, "name", "Ljava/lang/String;");
+            for (int a = 0; a < actCount; a++)
+            {
+              jobject actObj = env->GetObjectArrayElement(activities, a);
+              if (actObj)
+              {
+                auto actName = (jstring)env->GetObjectField(actObj, nameField);
+                if (actName)
+                {
+                  const char* name = env->GetStringUTFChars(actName, nullptr);
+                  CLog::Log(LOGINFO, "  activity[{}]: {}", a, name);
+                  env->ReleaseStringUTFChars(actName, name);
+                  env->DeleteLocalRef(actName);
+                }
+                env->DeleteLocalRef(actObj);
+              }
+            }
+            env->DeleteLocalRef(actInfoClass);
+            env->DeleteLocalRef(activities);
+          }
+          env->DeleteLocalRef(pkgInfoClass);
+          env->DeleteLocalRef(pkgInfo);
+        }
+        else if (env->ExceptionCheck())
+          env->ExceptionClear();
+      }
+      env->DeleteLocalRef(jPkg2);
+    }
+    env->DeleteLocalRef(pmClass);
+  }
+
+  // Log activities for all video player packages (diagnostics)
+  {
+    CJNIPackageManager pm2 = GetPackageManager();
+    jobject pmObj2 = pm2.get_raw();
+    jclass pmClass2 = env->GetObjectClass(pmObj2);
+    jmethodID getPkgInfo2 = env->GetMethodID(pmClass2, "getPackageInfo",
+        "(Ljava/lang/String;I)Landroid/content/pm/PackageInfo;");
+
+    if (getPkgInfo2)
+    {
+      for (const auto& app : videoApps)
+      {
+        jstring jPkg = env->NewStringUTF(app.packageName.c_str());
+        jobject pkgInfo = env->CallObjectMethod(pmObj2, getPkgInfo2, jPkg, (jint)1);
+        env->DeleteLocalRef(jPkg);
+
+        if (env->ExceptionCheck() || !pkgInfo)
+        {
+          env->ExceptionClear();
+          continue;
+        }
+
+        jclass pkgInfoClass = env->GetObjectClass(pkgInfo);
+        jfieldID activitiesField = env->GetFieldID(pkgInfoClass, "activities",
+            "[Landroid/content/pm/ActivityInfo;");
+        auto activities = (jobjectArray)env->GetObjectField(pkgInfo, activitiesField);
+        if (activities)
+        {
+          int actCount = env->GetArrayLength(activities);
+          CLog::Log(LOGINFO, "GetVideoPlayerApplications: '{}' ({}) has {} activities:",
+                    app.packageLabel, app.packageName, actCount);
+          jclass actInfoClass = env->FindClass("android/content/pm/ActivityInfo");
+          jfieldID nameField = env->GetFieldID(actInfoClass, "name", "Ljava/lang/String;");
+          for (int a = 0; a < actCount; a++)
+          {
+            jobject actObj = env->GetObjectArrayElement(activities, a);
+            if (actObj)
+            {
+              auto actName = (jstring)env->GetObjectField(actObj, nameField);
+              if (actName)
+              {
+                const char* name = env->GetStringUTFChars(actName, nullptr);
+                CLog::Log(LOGINFO, "  activity[{}]: {}", a, name);
+                env->ReleaseStringUTFChars(actName, name);
+                env->DeleteLocalRef(actName);
+              }
+              env->DeleteLocalRef(actObj);
+            }
+          }
+          env->DeleteLocalRef(actInfoClass);
+          env->DeleteLocalRef(activities);
+        }
+        env->DeleteLocalRef(pkgInfoClass);
+        env->DeleteLocalRef(pkgInfo);
+      }
+    }
+    env->DeleteLocalRef(pmClass2);
   }
 
   CLog::Log(LOGINFO, "GetVideoPlayerApplications: found {} video player apps (from {} total, {} video-capable)",
@@ -1494,6 +1658,37 @@ bool CXBMCApp::LaunchVRPlayer(const std::string& package,
                               int positionMs,
                               const std::string& extras)
 {
+  JNIEnv* env = xbmc_jnienv();
+
+  // Store the original file path so onActivityResult can save the resume bookmark
+  m_vrPlayerFilePath = filePath;
+
+  // --- Special case: SKYBOX VR ---
+  // SKYBOX doesn't declare ACTION_VIEW intent filters. Use its own launch intent
+  // with our data URI attached. Falls through to standard path if this fails.
+  if (package == "xyz.skybox.player" || package == "xyz.skybox.player.ovr")
+  {
+    CJNIURI jniURI = CJNIURI::parse(dataURI);
+    CJNIIntent launchIntent = GetPackageManager().getLaunchIntentForPackage(package);
+    if (jniURI && launchIntent)
+    {
+      launchIntent.setAction("android.intent.action.VIEW");
+      launchIntent.setDataAndType(jniURI, "video/*");
+
+      CLog::Log(LOGINFO, "LaunchVRPlayer: SKYBOX (launch intent + data) uri={}",
+                CURL::GetRedacted(dataURI));
+
+      startActivityForResult(launchIntent, VR_PLAYER_REQUEST_CODE);
+
+      if (!env->ExceptionCheck())
+        return true;
+
+      env->ExceptionClear();
+      CLog::Log(LOGWARNING, "LaunchVRPlayer: SKYBOX launch intent failed, trying standard path");
+    }
+  }
+
+  // --- Standard path for all other players ---
   CJNIIntent intent("android.intent.action.VIEW");
   if (!intent)
     return false;
@@ -1530,8 +1725,6 @@ bool CXBMCApp::LaunchVRPlayer(const std::string& package,
     }
   }
 
-  JNIEnv* env = xbmc_jnienv();
-
   // Pass start position as int extra (milliseconds) — honored by MX Player, VLC, etc.
   if (positionMs > 0)
   {
@@ -1549,9 +1742,6 @@ bool CXBMCApp::LaunchVRPlayer(const std::string& package,
     CLog::Log(LOGINFO, "LaunchVRPlayer: start position {}ms for {}", positionMs,
               CURL::GetRedacted(filePath));
   }
-
-  // Store the original file path so onActivityResult can save the resume bookmark
-  m_vrPlayerFilePath = filePath;
 
   startActivityForResult(intent, VR_PLAYER_REQUEST_CODE);
 

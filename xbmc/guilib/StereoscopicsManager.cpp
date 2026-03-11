@@ -43,6 +43,8 @@
 #include "platform/android/activity/XBMCApp.h"
 #endif
 
+#include <algorithm>
+#include <map>
 #include <stdlib.h>
 
 struct StereoModeMap
@@ -653,11 +655,46 @@ void CStereoscopicsManager::SettingOptions3DExternalPlayersFiller(
   // First option: play 3D content internally (empty value = no external player)
   list.emplace_back(g_localizeStrings.Get(36702), "");
 
+  // Known player compatibility ratings:
+  // ★★★ = launches, returns to Kodi, supports position sync
+  // ★★  = launches, returns to Kodi, no position sync
+  // ★   = launches and plays video
+  //  0   = known broken, hidden from list
+  static const std::map<std::string, int> playerRatings = {
+      {"org.courville.nova", 3},             // Nova Video Player
+      {"com.rockvr.moonplayer", 2},          // Moon VR
+      {"xyz.skybox.player", 1},              // SKYBOX VR (Android)
+      {"xyz.skybox.player.ovr", 1},          // SKYBOX VR (Quest Store)
+      {"cn.vr4p.oculus4xvrplayerov", 1},     // 4XVR Video Player
+      {"com.oculus.vrshell", 0},             // Meta Horizon Shell (doesn't work)
+      {"com.oculus.hzosgallery", 0},         // Gallery (doesn't work)
+      {"com.oculus.horizonmediaplayer", 0},  // Media Player (doesn't launch)
+  };
+
   // Query only apps that can handle ACTION_VIEW for video/* content
   auto apps = CXBMCApp::Get().GetVideoPlayerApplications();
   CLog::Log(LOGINFO, "SettingOptions3DExternalPlayersFiller: found {} video player apps", apps.size());
   for (const auto& app : apps)
-    list.emplace_back(app.packageLabel, app.packageName);
+  {
+    std::string label = app.packageLabel;
+    auto it = playerRatings.find(app.packageName);
+    if (it != playerRatings.end())
+    {
+      if (it->second <= 0)
+        continue; // skip known broken players
+      std::string stars;
+      for (int i = 0; i < it->second; ++i)
+        stars += "\xe2\x98\x85"; // ★ (U+2605)
+      label = label + " " + stars;
+    }
+    list.emplace_back(label, app.packageName);
+  }
+
+  // Sort player entries alphabetically (skip first entry which is "play internally")
+  if (list.size() > 2)
+    std::sort(list.begin() + 1, list.end(),
+              [](const StringSettingOption& a, const StringSettingOption& b)
+              { return a.label < b.label; });
 
   CLog::Log(LOGINFO, "SettingOptions3DExternalPlayersFiller: total options={}", list.size());
 }
