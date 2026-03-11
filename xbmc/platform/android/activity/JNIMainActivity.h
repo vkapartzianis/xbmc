@@ -40,7 +40,8 @@ public:
   static void unregisterMediaButtonEventReceiver();
 
   CJNIRect getDisplayRect();
-  void setVideoRefreshRate(int hz);
+  std::string setDisplayRefreshRate(int hz);
+  std::string setCompositorRefreshRate(int hz);
 
 private:
   static CJNIMainActivity *m_appInstance;

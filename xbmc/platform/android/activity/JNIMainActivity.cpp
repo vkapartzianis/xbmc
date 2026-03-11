@@ -162,9 +162,22 @@ CJNIRect CJNIMainActivity::getDisplayRect()
                                "getDisplayRect", "()Landroid/graphics/Rect;");
 }
 
-void CJNIMainActivity::setVideoRefreshRate(int hz)
+std::string CJNIMainActivity::setDisplayRefreshRate(int hz)
 {
-  call_method<void>(m_context, "setVideoRefreshRate", "(I)V", (jint)hz);
+  jhstring result = call_method<jhstring>(m_context, "setDisplayRefreshRate",
+                                          "(I)Ljava/lang/String;", (jint)hz);
+  if (result.get() != nullptr)
+    return jcast<std::string>(result);
+  return "null";
+}
+
+std::string CJNIMainActivity::setCompositorRefreshRate(int hz)
+{
+  jhstring result = call_method<jhstring>(m_context, "setCompositorRefreshRate",
+                                          "(I)Ljava/lang/String;", (jint)hz);
+  if (result.get() != nullptr)
+    return jcast<std::string>(result);
+  return "null";
 }
 
 void CJNIMainActivity::registerMediaButtonEventReceiver()

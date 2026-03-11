@@ -786,19 +786,21 @@ void CXBMCApp::SetDisplayModeCallback(void* modeVariant)
 void CXBMCApp::SetRefreshRate(float rate)
 {
   // On Quest, the standard preferredRefreshRate/display-event mechanism is
-  // ignored by Horizon OS. Try Shizuku (requires shell privilege) first;
-  // if unavailable fall back to ANativeWindow_setFrameRate on the main window.
+  // ignored by Horizon OS. Use Shizuku setprop to change the display panel rate.
   if (CAndroidUtils::IsQuestDevice())
   {
     if (rate < 1.0f)
     {
-      // rate=0 is used as a signal to restore the pre-playback refresh rate.
       if (rate == 0.0f)
       {
-        if (auto* jni = CJNIMainActivity::GetAppInstance())
-          jni->setVideoRefreshRate(0);
-        if (m_window)
-          m_window->SetFrameRate(0.0f);
+        CLog::Log(LOGINFO, "CXBMCApp::SetRefreshRate: Quest restore");
+        std::thread([]() {
+          if (auto* jni = CJNIMainActivity::GetAppInstance())
+          {
+            std::string result = jni->setDisplayRefreshRate(0);
+            CLog::Log(LOGINFO, "CXBMCApp::SetRefreshRate: restore: {}", result);
+          }
+        }).detach();
       }
       return;
     }
@@ -826,12 +828,13 @@ void CXBMCApp::SetRefreshRate(float rate)
       }
     }
     CLog::Log(LOGINFO, "CXBMCApp::SetRefreshRate: Quest {:.3f} -> {}Hz", rate, hz);
-    // ANativeWindow_setFrameRate before setprop (Java side also calls
-    // Surface.setFrameRate before and after setprop)
-    if (m_window)
-      m_window->SetFrameRate(static_cast<float>(hz));
-    if (auto* jni = CJNIMainActivity::GetAppInstance())
-      jni->setVideoRefreshRate(hz);
+    std::thread([hz]() {
+      if (auto* jni = CJNIMainActivity::GetAppInstance())
+      {
+        std::string result = jni->setDisplayRefreshRate(hz);
+        CLog::Log(LOGINFO, "CXBMCApp::SetRefreshRate: {}", result);
+      }
+    }).detach();
     return;
   }
 
@@ -2672,6 +2675,37 @@ void CXBMCApp::onDisplayChanged(int displayId)
   CWinSystemAndroid* winSystemAndroid = dynamic_cast<CWinSystemAndroid*>(CServiceBroker::GetWinSystem());
   if (winSystemAndroid)
     winSystemAndroid->UpdateDisplayModes();
+
+  // On Quest, attempt to sync the compositor to the new display rate.
+  // NOTE: Surface.setFrameRate() reports success but Horizon OS silently
+  // ignores it — the compositor only follows setprop transitions of ±10Hz
+  // or less. Kept here as the correct Android API call; may work on future
+  // Horizon OS updates.
+  if (CAndroidUtils::IsQuestDevice())
+  {
+    CJNIWindow window = getWindow();
+    if (window)
+    {
+      CJNIView view(window.getDecorView());
+      if (view)
+      {
+        CJNIDisplay display(view.getDisplay());
+        if (display)
+        {
+          float rate = display.getRefreshRate();
+          if (rate > 20.0f)
+          {
+            int hz = static_cast<int>(std::round(rate));
+            if (auto* jni = CJNIMainActivity::GetAppInstance())
+            {
+              std::string result = jni->setCompositorRefreshRate(hz);
+              CLog::Log(LOGINFO, "CXBMCApp::onDisplayChanged: compositor({}) = {}", hz, result);
+            }
+          }
+        }
+      }
+    }
+  }
 
   m_displayChangeEvent.Set();
   m_inputHandler.setDPI(GetDPI());

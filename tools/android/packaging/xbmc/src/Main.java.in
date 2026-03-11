@@ -379,80 +379,122 @@ public class Main extends NativeActivity implements Choreographer.FrameCallback
     });
   }
 
-  public void setVideoRefreshRate(int hz)
+  /**
+   * Changes the display panel refresh rate via Shizuku setprop.
+   * hz=0 restores the original rate captured at startup.
+   * Steps in increments of <= 10 Hz so the Quest compositor follows
+   * each transition (Horizon OS only auto-syncs the compositor for
+   * rate changes of ±10 Hz or less).
+   * Returns a log string for C++ to write to kodi.log.
+   */
+  public String setDisplayRefreshRate(int hz)
   {
+    StringBuilder log = new StringBuilder();
     final int targetHz = hz > 0 ? hz : Integer.parseInt(mOriginalRefreshRate);
-
-    trySetSurfaceFrameRate(targetHz);
+    log.append("targetHz=").append(targetHz);
 
     if (!Shizuku.pingBinder())
     {
-      Log.w(TAG, "setVideoRefreshRate: Shizuku not running");
-      return;
+      log.append(", shizuku: not running");
+      return log.toString();
     }
     if (Shizuku.checkSelfPermission() != PackageManager.PERMISSION_GRANTED)
     {
-      Log.w(TAG, "setVideoRefreshRate: Shizuku permission not granted");
-      return;
+      log.append(", shizuku: no permission");
+      return log.toString();
     }
-    final String value = String.valueOf(targetHz);
-    new Thread(() -> {
+    log.append(", shizuku: ok");
+
+    try
+    {
+      java.lang.reflect.Method newProcess = Shizuku.class.getDeclaredMethod(
+          "newProcess", String[].class, String[].class, String.class);
+      newProcess.setAccessible(true);
+
+      // Read the current display rate to determine stepping distance.
+      int currentHz = targetHz; // fallback: no stepping needed
       try
       {
-        java.lang.reflect.Method m = Shizuku.class.getDeclaredMethod(
-            "newProcess", String[].class, String[].class, String.class);
-        m.setAccessible(true);
-
-        Process p = (Process) m.invoke(null,
-            new String[]{"setprop", "debug.oculus.refreshRate", value}, null, null);
-        int exit = p.waitFor();
-        Log.i(TAG, "setVideoRefreshRate: setprop debug.oculus.refreshRate " +
-                   value + " -> exit " + exit);
+        Class<?> sp = Class.forName("android.os.SystemProperties");
+        java.lang.reflect.Method get = sp.getMethod("get", String.class, String.class);
+        String cur = (String) get.invoke(null, "debug.oculus.refreshRate", "90");
+        if (!cur.isEmpty())
+          currentHz = Integer.parseInt(cur);
       }
       catch (Exception e)
       {
-        Log.e(TAG, "setVideoRefreshRate: " + e.getMessage());
+        log.append(", getprop: ").append(e.getMessage());
+      }
+      log.append(", from=").append(currentHz);
+
+      // The Horizon OS compositor only auto-syncs when the rate change is
+      // within ~10%. If the jump is larger, first set an intermediate value
+      // ~9% away from the target so the final step triggers compositor sync.
+      int diff = Math.abs(targetHz - currentHz);
+      if (diff * 100 > targetHz * 10 && currentHz != targetHz)
+      {
+        // Place intermediate ~9% away from target, on the side of currentHz
+        int intermediate = targetHz > currentHz
+            ? targetHz - Math.max(targetHz * 9 / 100, 1)
+            : targetHz + Math.max(targetHz * 9 / 100, 1);
+        String intValue = String.valueOf(intermediate);
+        Process p = (Process) newProcess.invoke(null,
+            new String[]{"setprop", "debug.oculus.refreshRate", intValue}, null, null);
+        int exit = p.waitFor();
+        log.append(", ").append(intermediate).append("Hz:").append(exit);
+        Thread.sleep(1000);
       }
 
-      // Call Surface.setFrameRate again after setprop
-      trySetSurfaceFrameRate(targetHz);
-    }).start();
+      // Final step to the target rate (within ~9% of intermediate if used).
+      {
+        String value = String.valueOf(targetHz);
+        Process p = (Process) newProcess.invoke(null,
+            new String[]{"setprop", "debug.oculus.refreshRate", value}, null, null);
+        int exit = p.waitFor();
+        log.append(", ").append(targetHz).append("Hz:").append(exit);
+      }
+    }
+    catch (Exception e)
+    {
+      log.append(", err: ").append(e.getMessage());
+    }
+
+    return log.toString();
   }
 
   /**
-   * Attempts to set the frame rate on the main rendering Surface.
-   * This is the Java equivalent of ANativeWindow_setFrameRate.
-   * FIXED_SOURCE compatibility + CHANGE_FRAME_RATE_ALWAYS strategy.
+   * Sets the compositor frame rate via Surface.setFrameRate (Java API).
+   * Note: Horizon OS currently ignores this silently, but keeping it
+   * as the correct Android API in case future OS updates honour it.
+   * Returns a log string for C++ to write to kodi.log.
    */
-  private void trySetSurfaceFrameRate(int hz)
+  public String setCompositorRefreshRate(int hz)
   {
     try
     {
       if (mMainView == null)
-        return;
+        return "no view";
       android.view.Surface surface = mMainView.getHolder().getSurface();
       if (surface == null || !surface.isValid())
-      {
-        Log.w(TAG, "trySetSurfaceFrameRate: no valid surface");
-        return;
-      }
+        return "no surface";
 
       float rate = hz > 0 ? (float) hz : 0.0f;
       int compat = hz > 0 ? 1 : 0; // 1 = FIXED_SOURCE
       if (Build.VERSION.SDK_INT >= 31)
       {
         surface.setFrameRate(rate, compat, hz > 0 ? 1 : 0); // 1 = ALWAYS
-        Log.i(TAG, "Surface.setFrameRate(" + hz + "Hz, FIXED_SOURCE, ALWAYS)");
+        return "ok(" + hz + "Hz,31)";
       }
       else if (Build.VERSION.SDK_INT >= 30)
       {
         surface.setFrameRate(rate, compat);
-        Log.i(TAG, "Surface.setFrameRate(" + hz + "Hz, FIXED_SOURCE)");
+        return "ok(" + hz + "Hz,30)";
       }
+      return "sdk<30";
     }
     catch (Exception e)
     {
-      Log.w(TAG, "trySetSurfaceFrameRate failed: " + e.getMessage());
+      return "err:" + e.getMessage();
     }
   }
 
